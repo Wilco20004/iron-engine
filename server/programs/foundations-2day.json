@@ -6,7 +6,7 @@
   "daysPerWeek": "2 + daily walks",
   "sessionLength": "~60 min",
   "lede": "Two full-body sessions a week. Each one starts with weights and finishes with cardio. The program protects the right shoulder, rebuilds core strength after two pregnancies, and builds general fitness for fat loss, plus the strength for lifting and carrying a 2- and a 5-year-old.",
-  "notice": "Built around a past right-shoulder operation and two pregnancies. Exercises marked ⚠ load the shoulder: do them only with your physio's OK, and keep the right side pain-free. Stop anything that causes sharp, pinching or joint pain, or leaking, heaviness or pelvic pressure. Add your age (31) in settings to see your heart-rate zones.",
+  "notice": "Built around a right-shoulder operation (a year ago, cleared by her doctor) and two pregnancies. Exercises marked ⚠ load the shoulder: start light, build up gradually and keep the right side pain-free. Stop anything that causes sharp, pinching or joint pain, or leaking, heaviness or pelvic pressure. Add your age (31) in settings to see your heart-rate zones.",
   "deloadCardio": {
     "minutes": 15
   },
@@ -80,7 +80,16 @@
           "rest": "60 s",
           "cue": "Shoulders down, elbows close",
           "main": false,
-          "caution": "Right shoulder: physio's OK first. Pain-free range only; if the right side pinches, shorten the pull or go lighter."
+          "caution": "Right shoulder: start light. If the right side pinches, shorten the pull or go lighter."
+        },
+        {
+          "name": "Incline dumbbell press (light)",
+          "sets": 3,
+          "reps": "10",
+          "rest": "60 s",
+          "cue": "Palms facing in, pain-free depth",
+          "main": false,
+          "caution": "Right shoulder: start very light, palms facing each other, and lower only as deep as is pain-free. Stop at any pinching."
         },
         {
           "name": "Glute bridge",
@@ -181,7 +190,7 @@
           "rest": "60 s",
           "cue": "Pain-free range only",
           "main": false,
-          "caution": "Right shoulder: only once your physio clears overhead movement. Let the bar rise only as high as the right shoulder is pain-free."
+          "caution": "Right shoulder: start light and let the bar rise only as high as the right shoulder is pain-free. Full range will come back over the weeks."
         },
         {
           "name": "Band external rotation",
@@ -341,7 +350,7 @@
     [
       "Shoulder first",
       "Pain-free",
-      "Train the right shoulder in a pain-free range. Pinching or sharp pain means stop that exercise and tell your physio. Normal muscle tiredness is fine."
+      "Cleared, so now it is about building up. Add weight to shoulder exercises slowly, keep the right side pain-free, and back off if it aches the next day."
     ],
     [
       "Core rule",

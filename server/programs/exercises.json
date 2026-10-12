@@ -502,7 +502,7 @@
       "shoulders"
     ],
     "images": 2,
-    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+    "caution": "Shoulder: build up gradually and keep it pain-free. Stop if you feel pinching or sharp pain."
   },
   "Glute bridge": {
     "photo": "Butt_Lift_Bridge",
@@ -580,12 +580,12 @@
   },
   "Close-grip lat pulldown (light)": {
     "photo": "Close-Grip_Front_Lat_Pulldown",
-    "what": "Pull a close-grip bar down to your chest, keeping it light. Rebuilds back strength once your shoulder is cleared for overhead work.",
+    "what": "Pull a close-grip bar down to your chest. Rebuilds back strength and overhead range after a shoulder operation.",
     "steps": [
-      "Only start this once your physio clears overhead movement",
-      "Use a close or neutral grip, light weight",
-      "Pull to your upper chest, shoulders down and back",
-      "Let it rise only as high as is pain-free"
+      "Use a close or neutral grip and start light",
+      "Sit tall, pull to your upper chest, shoulders down and back",
+      "Let the bar rise slowly, only as high as is pain-free",
+      "Add weight only when all reps feel smooth"
     ],
     "load": "machine",
     "muscles": [
@@ -597,7 +597,7 @@
       "shoulders"
     ],
     "images": 2,
-    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+    "caution": "Shoulder: build up gradually and keep it pain-free. Stop if you feel pinching or sharp pain."
   },
   "Band external rotation": {
     "photo": "External_Rotation_with_Band",
@@ -614,7 +614,7 @@
     ],
     "secondary": [],
     "images": 2,
-    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+    "caution": "Shoulder: build up gradually and keep it pain-free. Stop if you feel pinching or sharp pain."
   },
   "Side plank from knees": {
     "photo": "Side_Bridge",
@@ -633,7 +633,7 @@
       "shoulders"
     ],
     "images": 2,
-    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+    "caution": "Shoulder: build up gradually and keep it pain-free. Stop if you feel pinching or sharp pain."
   },
   "Bird dog": {
     "photo": "",
@@ -672,6 +672,25 @@
       "hamstrings"
     ],
     "images": 2,
-    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+    "caution": "Shoulder: build up gradually and keep it pain-free. Stop if you feel pinching or sharp pain."
+  },
+  "Incline dumbbell press (light)": {
+    "photo": "Incline_Dumbbell_Press",
+    "what": "Press light dumbbells up on a bench tilted to about 30°, palms facing each other. Builds chest and shoulder strength in a shoulder-friendly position.",
+    "steps": [
+      "Set the bench to a low incline and lie back",
+      "Hold light dumbbells at chest level, palms facing each other",
+      "Press up until your arms are straight, without locking hard",
+      "Lower slowly, only as deep as your shoulders are comfortable"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "chest"
+    ],
+    "secondary": [
+      "shoulders",
+      "triceps"
+    ],
+    "images": 2
   }
 }
