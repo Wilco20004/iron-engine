@@ -5,8 +5,8 @@
   "goal": "Strength, core & fat loss",
   "daysPerWeek": "2 + daily walks",
   "sessionLength": "~60 min",
-  "lede": "Two full-body sessions a week. Each one starts with weights and finishes with cardio. The program protects the shoulder, rebuilds core strength after pregnancy, and builds general fitness for fat loss.",
-  "notice": "Built around a past shoulder operation and two pregnancies. Exercises marked with ⚠ need your physio's OK first. Stop anything that causes sharp, pinching or joint pain, or leaking, heaviness or pelvic pressure. Check with your physio or doctor before starting.",
+  "lede": "Two full-body sessions a week. Each one starts with weights and finishes with cardio. The program protects the right shoulder, rebuilds core strength after two pregnancies, and builds general fitness for fat loss, plus the strength for lifting and carrying a 2- and a 5-year-old.",
+  "notice": "Built around a past right-shoulder operation and two pregnancies. Exercises marked ⚠ load the shoulder: do them only with your physio's OK, and keep the right side pain-free. Stop anything that causes sharp, pinching or joint pain, or leaking, heaviness or pelvic pressure. Add your age (31) in settings to see your heart-rate zones.",
   "deloadCardio": {
     "minutes": 15
   },
@@ -79,7 +79,8 @@
           "reps": "12",
           "rest": "60 s",
           "cue": "Shoulders down, elbows close",
-          "main": false
+          "main": false,
+          "caution": "Right shoulder: physio's OK first. Pain-free range only; if the right side pinches, shorten the pull or go lighter."
         },
         {
           "name": "Glute bridge",
@@ -95,7 +96,8 @@
           "reps": "6 / side",
           "rest": "45 s",
           "cue": "Lower back stays gently on the floor",
-          "main": false
+          "main": false,
+          "caution": "If reaching the right arm overhead is uncomfortable, keep both hands on your hips and move the legs only."
         },
         {
           "name": "Pallof press",
@@ -103,7 +105,8 @@
           "reps": "10 / side",
           "rest": "45 s",
           "cue": "Don't let it twist you",
-          "main": false
+          "main": false,
+          "caution": "Keep the press at chest height and short. If the right shoulder complains, hold the handle at your chest without pressing out (an isometric hold)."
         }
       ],
       "cardio": {
@@ -177,7 +180,8 @@
           "reps": "12",
           "rest": "60 s",
           "cue": "Pain-free range only",
-          "main": false
+          "main": false,
+          "caution": "Right shoulder: only once your physio clears overhead movement. Let the bar rise only as high as the right shoulder is pain-free."
         },
         {
           "name": "Band external rotation",
@@ -185,7 +189,8 @@
           "reps": "15",
           "rest": "45 s",
           "cue": "Elbow pinned to your side",
-          "main": false
+          "main": false,
+          "caution": "Do both arms, right (operated) side first. Use the band and exact variation your physio gave you, if any. Light and slow."
         },
         {
           "name": "Side plank from knees",
@@ -193,7 +198,8 @@
           "reps": "20 s / side",
           "rest": "45 s",
           "cue": "Straight line knees to head",
-          "main": false
+          "main": false,
+          "caution": "Left elbow (left side down) is fine. On the right elbow only if pain-free; otherwise do the left side twice and an extra set of bird dogs."
         },
         {
           "name": "Bird dog",
@@ -201,7 +207,8 @@
           "reps": "6 / side",
           "rest": "45 s",
           "cue": "Hips stay level",
-          "main": false
+          "main": false,
+          "caution": "Reach the right arm forward only if pain-free; otherwise keep that hand on the floor and move the legs only."
         },
         {
           "name": "Farmer's carry",
@@ -209,7 +216,8 @@
           "reps": "30 m",
           "rest": "60 s",
           "cue": "Tall posture, shoulders down",
-          "main": false
+          "main": false,
+          "caution": "Right shoulder: start with a lighter dumbbell in the right hand, or carry only in the left and swap the walk direction. Shoulders down, never shrugged."
         }
       ],
       "cardio": {
@@ -333,12 +341,17 @@
     [
       "Shoulder first",
       "Pain-free",
-      "Train in a pain-free range. Pinching or sharp pain means stop that exercise and tell your physio. Normal muscle tiredness is fine."
+      "Train the right shoulder in a pain-free range. Pinching or sharp pain means stop that exercise and tell your physio. Normal muscle tiredness is fine."
     ],
     [
       "Core rule",
       "Breathe out",
       "Breathe out and gently draw your belly and pelvic floor in at the hardest part of each rep. Doming along the middle of your tummy means: make it easier."
+    ],
+    [
+      "Real-life strength",
+      "~12 kg",
+      "About what a 2-year-old weighs. Goblet squats, deadlifts and carries train exactly the lifting and carrying you do every day."
     ],
     [
       "Protein",

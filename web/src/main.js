@@ -19,7 +19,8 @@ function applyProgram(program, exercises) {
   WEEKS = program.weeks;
   DAYS = program.days.map(d => d.rest ? d : {
     ...d,
-    lifts: d.lifts.map(l => [l.name, l.sets, l.reps, l.rest, l.cue, !!l.main, l.pair]),
+    // A lift's own caution (e.g. "right shoulder") overrides the library's general one.
+    lifts: d.lifts.map(l => [l.name, l.sets, l.reps, l.rest, l.cue, !!l.main, l.pair, l.caution || LIB[l.name]?.caution || ""]),
     cardio: { ...d.cardio, hr: hrRange(d.cardio.pct) },
   });
 }
@@ -89,7 +90,7 @@ function renderSession() {
     const logged = doneSets.length ? `<b>${doneSets.length}/${setsFor(l, wk)} sets</b><br>${esc(fmtSets(doneSets))}` : (entry.kg ? esc(entry.kg) + " kg" : "–");
     return `<tr class="${entry.done ? "is-done" : ""}">
       <td><input type="checkbox" id="chk-${k}" data-i="${i}" ${entry.done ? "checked" : ""} aria-label="Mark ${esc(l[0])} done"></td>
-      <td class="ex"><button type="button" class="ex-open" data-open="${i}">${l[6] ? `<span class="pair">${l[6]}</span>` : ""}<b>${esc(l[0])}</b>${LIB[l[0]]?.caution ? ' <span class="caution" title="Physio OK first">⚠</span>' : ""}<small>${esc(l[4])}</small><span class="ex-cta">${doneSets.length ? "Open log" : "Open & log"} →</span></button></td>
+      <td class="ex"><button type="button" class="ex-open" data-open="${i}">${l[6] ? `<span class="pair">${l[6]}</span>` : ""}<b>${esc(l[0])}</b>${l[7] ? ' <span class="caution" title="Physio OK first">⚠</span>' : ""}<small>${esc(l[4])}</small><span class="ex-cta">${doneSets.length ? "Open log" : "Open & log"} →</span></button></td>
       <td class="num">${setsFor(l, wk)} × ${l[2]}</td>
       <td class="num">${l[3]}</td>
       <td class="num">${wk.rir}</td>
@@ -238,7 +239,7 @@ function renderSheet() {
         <a href="${ytLink(l[0])}" target="_blank" rel="noopener">Watch video demos ↗</a>
       </div></details>` : ""}
       <p class="last">${last ? `${last.week}: <b>${esc(fmtSets(last.sets))}</b>. Try to beat it by a rep or a little weight.` : `First time logging this. Pick a weight you could lift about ${wk.rir} more reps with.`}</p>
-      ${LIB[l[0]]?.caution ? `<p class="warn-note" style="border-color:var(--warm);background:var(--warm-soft)">⚠ ${esc(LIB[l[0]].caution)}</p>` : ""}
+      ${l[7] ? `<p class="warn-note" style="border-color:var(--warm);background:var(--warm-soft)">⚠ ${esc(l[7])}</p>` : ""}
       ${wh[1] ? `<p class="wt-hint">${wh[1]}</p>` : ""}
       <div class="sets"><div class="set-head" aria-hidden="true"><span>Set</span><span>${wh[0]}</span><span>Reps</span><span>Fail</span><span>Done</span></div>${rows}</div>
       ${e.sets.some(x => x.fail) && wk.rir >= 2 ? `<p class="warn-note">${wk.name} aims to stop about ${wk.rir} reps short of failure. Going to failure this early tires you out fast, so try a little lighter on the next set.</p>` : ""}
