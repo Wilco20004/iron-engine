@@ -28,4 +28,7 @@ export const api = {
   putEntry: (k, entry) => req("log/" + encodeURIComponent(k), send("PUT", entry)),
   deleteEntry: k => req("log/" + encodeURIComponent(k), send("DELETE")),
   importLog: entries => req("log/import", send("POST", { entries })),
+  startBlock: programId => req("blocks", send("POST", { programId })),
+  connector: () => req("connector"),
+  regenerateConnector: () => req("connector/regenerate", send("POST")),
 };

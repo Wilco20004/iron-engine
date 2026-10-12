@@ -4,6 +4,7 @@ import { api } from "./api.js";
 
 // Filled from the server once someone signs in.
 let PROGRAM = null, LIB = {}, WEEKS = [], DAYS = [], INFO = {}, PHOTOS = {}, ME = null;
+let BLOCK = null, BLOCKS = [], PREVIOUS = null;
 const ytLink = n => "https://www.youtube.com/results?search_query=" + encodeURIComponent(n.replace(/\(.*\)/, "") + " exercise form");
 function hrRange(pct) {
   const max = ME?.age ? 220 - ME.age : null;
@@ -28,14 +29,24 @@ function applyProgram(program, exercises) {
 let state = { week: 0, day: 0 };
 let log = {};
 let loaded = false, synced = {}, syncTimer = null, syncing = false;
-const viewKey = () => "ie-view-" + (ME?.id || "");
+const viewKey = () => "ie-view-" + (ME?.id || "") + "-" + (BLOCK?.id || "");
 
 function save() {
   try { localStorage.setItem(viewKey(), JSON.stringify(state)); } catch (e) {}
   if (!loaded) return;
   clearTimeout(syncTimer); setStatus("saving"); syncTimer = setTimeout(flush, 600);
 }
-function key(w, d, i) { return w + "-" + d + "-" + i; }
+// Must match slug() in server/src/plan.ts.
+function slug(name) {
+  return name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "x";
+}
+// Log keys: "<week>-<day>-<exercise slug>", "-cardio" or "-end". i is the
+// exercise's position in the day (or lifts.length for cardio, or "end").
+function key(w, d, i) {
+  if (i === "end") return w + "-" + d + "-end";
+  const lifts = DAYS[d]?.lifts || [];
+  return w + "-" + d + "-" + (+i === lifts.length ? "cardio" : slug(lifts[+i][0]));
+}
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 function setsFor(lift, wk) {
@@ -173,6 +184,18 @@ function lastTime(i) {
   for (let w = state.week - 1; w >= 0; w--) {
     const s = (log[key(w, state.day, i)]?.sets || []).filter(x => x.done);
     if (s.length) return { week: WEEKS[w].name, sets: s };
+  }
+  // Nothing yet this block: use the last non-recovery week of the previous block.
+  if (PREVIOUS) {
+    const want = slug(DAYS[state.day].lifts[i][0]);
+    let best = null;
+    for (const [k, e] of Object.entries(PREVIOUS.entries)) {
+      const m = k.match(/^(\d+)-(\d+)-(.+)$/);
+      if (!m || m[3] !== want || PREVIOUS.weeks[+m[1]]?.cardio === "deload") continue;
+      const s = (e.sets || []).filter(x => x.done);
+      if (s.length && (!best || +m[1] > best.w)) best = { w: +m[1], sets: s };
+    }
+    if (best) return { week: "Last block, " + (PREVIOUS.weeks[best.w]?.name || "Week " + (best.w + 1)), sets: best.sets };
   }
   return null;
 }
@@ -554,11 +577,12 @@ function canon(v) {
   return JSON.stringify(v);
 }
 function addMeta(k, e) {
-  const [w, d, i] = k.split("-"), day = DAYS[+d], wk = WEEKS[+w];
+  const m = k.match(/^(\d+)-(\d+)-(.+)$/); if (!m) return;
+  const [, w, d, item] = m, day = DAYS[+d], wk = WEEKS[+w];
   if (!day || !wk || day.rest) return;
   if (!e.week) e.week = wk.name;
   if (!e.day) e.day = day.d + " " + day.title;
-  if (!e.item) e.item = i === "end" ? "Ended session early" : +i === day.lifts.length ? "Cardio: " + cardioFor(day, wk).kind : day.lifts[+i]?.[0] || "?";
+  if (!e.item) e.item = item === "end" ? "Ended session early" : item === "cardio" ? "Cardio: " + cardioFor(day, wk).kind : day.lifts.find(l => slug(l[0]) === item)?.[0] || item;
   if (!e.date) e.date = new Date().toISOString().slice(0, 10);
 }
 function setStatus(s, msg) {
@@ -627,7 +651,8 @@ function renderHeader() {
   document.getElementById("lede").textContent = p.lede || "";
   const notice = document.getElementById("notice");
   notice.hidden = !p.notice; notice.textContent = p.notice || "";
-  const chips = [["Training", ME.name + (ME.age ? ", " + ME.age : "")], ["Goal", p.goal], ["Days / week", p.daysPerWeek], ["Session", p.sessionLength]];
+  const since = BLOCK ? new Date(BLOCK.startedAt).toLocaleDateString([], { day: "numeric", month: "short" }) : "";
+  const chips = [["Training", ME.name + (ME.age ? ", " + ME.age : "")], ["Block", BLOCK ? BLOCK.number + " · since " + since : ""], ["Goal", p.goal], ["Days / week", p.daysPerWeek], ["Session", p.sessionLength]];
   if (ME.age) chips.push(["Est. max HR", (220 - ME.age) + " bpm"]);
   document.getElementById("profileChips").innerHTML = chips.filter(c => c[1]).map(([k, v]) => `<div><span class="label">${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
   document.getElementById("rules").innerHTML = (p.rules || []).map(([label, big, text]) => `<div class="rule"><span class="label">${esc(label)}</span><span class="big">${esc(big)}</span><p>${esc(text)}</p></div>`).join("");
@@ -701,10 +726,10 @@ authView.addEventListener("submit", async e => {
 });
 
 /* ---------- settings ---------- */
-let settingsMsg = {};
+let settingsMsg = {}, newBlockArmed = false, connArmed = false, connectorUrl = "";
 async function openSettings() {
   try { authPrograms = await api.programs(); } catch (e) {}
-  settingsMsg = {}; openSheet("settings");
+  settingsMsg = {}; newBlockArmed = false; connArmed = false; connectorUrl = ""; openSheet("settings");
 }
 function renderSettings() {
   const m = k => settingsMsg[k] ? `<p class="${settingsMsg[k].ok ? "ok" : "err"}" role="status">${esc(settingsMsg[k].text)}</p>` : "";
@@ -713,16 +738,27 @@ function renderSettings() {
     <div class="sh-body">
       <div class="settings-sec form"><span class="label">Your details</span>
         <label>Age (for heart-rate zones)<input class="sin" id="set-age" inputmode="numeric" value="${esc(ME.age ?? "")}"></label>
-        <label>Program<select id="set-prog">${programOptions(ME.programId)}</select></label>
         <label>New PIN (4–8 digits)<input class="sin" id="set-pin" inputmode="numeric" type="password" autocomplete="new-password" placeholder="${ME.hasPin ? "Leave empty to keep your PIN" : "No PIN set"}"></label>
         ${ME.hasPin ? `<button type="button" class="btn" data-pin-remove style="justify-self:start">Remove PIN</button>` : ""}
+        <label>Notes for your coach (injuries, goals, how training feels)<textarea id="set-notes" style="font-family:var(--f-body);font-size:.95rem">${esc(ME.notes || "")}</textarea></label>
         <button type="button" class="primary-btn" data-set-save>Save changes</button>${m("me")}
+      </div>
+      <div class="settings-sec form"><span class="label">Training blocks</span>
+        <p class="wt-hint">A block is one run through your plan. Starting a new one keeps all earlier blocks and their logs, and your first weeks show last block's numbers to beat.</p>
+        <ol style="margin:0;padding-left:1.2em;display:grid;gap:4px">${BLOCKS.map(b => `<li>Block ${b.number}: ${esc(b.name)}, ${new Date(b.startedAt).toLocaleDateString()}${b.endedAt ? " to " + new Date(b.endedAt).toLocaleDateString() : " (current)"}</li>`).join("")}</ol>
+        <label>Program for the new block<select id="set-prog">${programOptions(BLOCK?.programId || ME.programId)}</select></label>
+        <button type="button" class="btn" data-new-block style="justify-self:start">${newBlockArmed ? "Tap again to start Block " + ((BLOCK?.number || 0) + 1) : "Start a new block"}</button>${m("block")}
       </div>
       <div class="settings-sec form"><span class="label">Add a person</span>${personFields("add")}<button type="button" class="btn" data-add-person style="justify-self:start">Add person</button>${m("add")}</div>
       <div class="settings-sec form"><span class="label">Your log</span>
         <button type="button" class="btn" data-copy-log style="justify-self:start">Copy my log</button>
         <label>Import a log (JSON)<textarea id="imp-json" placeholder='{"0-0-0": {"sets": [...]}}'></textarea></label>
         <button type="button" class="btn" data-import-log style="justify-self:start">Import</button>${m("log")}
+      </div>
+      <div class="settings-sec form"><span class="label">Claude connector</span>
+        <p class="wt-hint">Lets Claude read your logs and change training plans. In Claude, go to Settings → Connectors → Add custom connector and paste this link. Anyone with the link can read and change everyone's training, so keep it private.</p>
+        ${connectorUrl ? `<input class="sin" id="conn-url" readonly value="${esc(connectorUrl)}" style="font-size:.8rem">
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-conn-copy>Copy link</button><button type="button" class="btn" data-conn-new>${connArmed ? "Tap again: old link stops working" : "Make a new link"}</button></div>` : `<button type="button" class="btn" data-conn-show style="justify-self:start">Show connector link</button>`}${m("conn")}
       </div>
       <div class="settings-sec"><button type="button" class="btn" data-logout style="justify-self:start">Switch person / sign out</button></div>
     </div>
@@ -734,13 +770,25 @@ async function settingsClick(t) {
   try {
     if (t.hasAttribute("data-set-save")) {
       const pin = document.getElementById("set-pin").value.trim();
-      const changes = { age: document.getElementById("set-age").value.trim(), programId: document.getElementById("set-prog").value };
+      const changes = { age: document.getElementById("set-age").value.trim(), notes: document.getElementById("set-notes").value };
       if (pin) changes.pin = pin;
-      const progChanged = changes.programId !== ME.programId;
       ME = await api.updateMe(changes);
-      if (progChanged) { closeSheet(); await startApp(); return true; }
       const { program, exercises } = await api.program(); applyProgram(program, exercises);
       renderHeader(); renderSession(); say("me", "Saved.", true);
+    } else if (t.hasAttribute("data-new-block")) {
+      if (!newBlockArmed) { newBlockArmed = true; renderSettings(); setTimeout(() => { if (newBlockArmed && sheetI === "settings") { newBlockArmed = false; renderSettings(); } }, 5000); return true; }
+      newBlockArmed = false;
+      await flush();
+      await api.startBlock(document.getElementById("set-prog").value);
+      closeSheet(); await startApp();
+    } else if (t.hasAttribute("data-conn-show")) {
+      connectorUrl = (await api.connector()).url; renderSettings();
+    } else if (t.hasAttribute("data-conn-new")) {
+      if (!connArmed) { connArmed = true; renderSettings(); return true; }
+      connArmed = false; connectorUrl = (await api.regenerateConnector()).url; say("conn", "New link made. Update it in Claude.", true);
+    } else if (t.hasAttribute("data-conn-copy")) {
+      try { await navigator.clipboard.writeText(connectorUrl); say("conn", "Link copied.", true); }
+      catch (e) { document.getElementById("conn-url").select(); say("conn", "Copy the selected link.", true); }
     } else if (t.hasAttribute("data-pin-remove")) {
       ME = await api.updateMe({ pin: "" }); say("me", "PIN removed.", true);
     } else if (t.hasAttribute("data-add-person")) {
@@ -759,7 +807,7 @@ async function settingsClick(t) {
     } else return false;
   } catch (e) {
     if (e.status === 401) { showAuth(); return true; }
-    const k = t.hasAttribute("data-add-person") ? "add" : t.hasAttribute("data-import-log") || t.hasAttribute("data-copy-log") ? "log" : "me";
+    const k = t.hasAttribute("data-add-person") ? "add" : t.hasAttribute("data-import-log") || t.hasAttribute("data-copy-log") ? "log" : t.hasAttribute("data-new-block") ? "block" : /data-conn/.test(t.outerHTML) ? "conn" : "me";
     say(k, e.message, false);
   }
   return true;
@@ -772,9 +820,11 @@ async function startApp() {
   try { data = await api.program(); }
   catch (e) { if (e.status === 401) return showAuth(); authView.hidden = false; authView.innerHTML = `<p class="err">${esc(e.message)}</p><button type="button" class="primary-btn" data-retry>Try again</button>`; return; }
   applyProgram(data.program, data.exercises);
+  BLOCK = data.block; BLOCKS = data.blocks || []; PREVIOUS = data.previous;
   const today = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()];
   state = { week: 0, day: Math.max(0, DAYS.findIndex(d => d.d === today)) };
   try { const v = JSON.parse(localStorage.getItem(viewKey()) || "null"); if (v && WEEKS[v.week] && DAYS[v.day]) state = v; } catch (e) {}
+  if (run?.running) clearInterval(cardioInt);
   run = null; loaded = false; log = {}; synced = {}; setStatus("wait");
   renderHeader();
   document.getElementById("appView").hidden = false;

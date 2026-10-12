@@ -3,6 +3,12 @@ import path from 'path';
 import fs from 'fs';
 import './db';
 import { api } from './routes';
+import { mcp } from './mcp';
+import { listProfiles, ensureBlock, migrateLegacyLog, seedPrograms } from './store';
+
+seedPrograms();
+for (const p of listProfiles()) ensureBlock(p);
+migrateLegacyLog();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -10,12 +16,13 @@ const PORT = Number(process.env.PORT) || 8080;
 app.set('trust proxy', true);
 app.use(express.json({ limit: '2mb' }));
 app.use('/api', api);
+app.use('/mcp', mcp);
 
 const webDist = path.join(__dirname, '..', '..', 'web', 'dist');
 if (fs.existsSync(webDist)) {
   app.use(express.static(webDist));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
+    if (req.path.startsWith('/api') || req.path.startsWith('/mcp')) return next();
     res.sendFile(path.join(webDist, 'index.html'));
   });
 }
