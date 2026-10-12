@@ -1,0 +1,12 @@
+services:
+  iron-engine:
+    build: .
+    image: iron-engine:latest
+    container_name: iron-engine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - PORT=8080

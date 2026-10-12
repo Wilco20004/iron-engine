@@ -1,0 +1,677 @@
+{
+  "Barbell bench press": {
+    "photo": "Barbell_Bench_Press_-_Medium_Grip",
+    "what": "Lie on a flat bench and press a barbell up from your chest. The main chest builder.",
+    "steps": [
+      "Lie down with eyes under the bar, feet flat on the floor",
+      "Grip a bit wider than shoulders, lift the bar off the rack",
+      "Lower slowly to your lower chest",
+      "Press back up until arms are straight"
+    ],
+    "load": "barbell",
+    "muscles": [
+      "chest"
+    ],
+    "secondary": [
+      "shoulders",
+      "triceps"
+    ],
+    "images": 2
+  },
+  "Barbell bent-over row": {
+    "photo": "Bent_Over_Barbell_Row",
+    "what": "Lean forward holding a barbell and pull it to your stomach. Builds a thick upper back.",
+    "steps": [
+      "Hold the bar, bend knees slightly, push hips back",
+      "Lean forward until your back is close to 45°, keep it flat",
+      "Pull the bar to your belly button",
+      "Lower under control"
+    ],
+    "load": "barbell",
+    "muscles": [
+      "middle back"
+    ],
+    "secondary": [
+      "biceps",
+      "lats",
+      "shoulders"
+    ],
+    "images": 2
+  },
+  "Seated dumbbell shoulder press": {
+    "photo": "Dumbbell_Shoulder_Press",
+    "what": "Sit on an upright bench and press two dumbbells overhead. Builds shoulders.",
+    "steps": [
+      "Sit with back against the bench, dumbbells at shoulder height",
+      "Press up until arms are nearly straight",
+      "Lower back to shoulder height"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "shoulders"
+    ],
+    "secondary": [
+      "triceps"
+    ],
+    "images": 2
+  },
+  "Lat pulldown": {
+    "photo": "Wide-Grip_Lat_Pulldown",
+    "what": "Sit at a cable machine and pull a wide bar down to your chest. Builds the wide muscles of the back.",
+    "steps": [
+      "Sit with thighs under the pad, grab the bar wide",
+      "Lean back slightly, pull the bar to your upper chest",
+      "Let it rise slowly until arms are straight"
+    ],
+    "load": "machine",
+    "muscles": [
+      "lats"
+    ],
+    "secondary": [
+      "biceps",
+      "middle back",
+      "shoulders"
+    ],
+    "images": 2
+  },
+  "Dumbbell lateral raise": {
+    "photo": "Side_Lateral_Raise",
+    "what": "Lift light dumbbells out to your sides. Makes shoulders look wider.",
+    "steps": [
+      "Stand with dumbbells at your sides",
+      "Raise arms out sideways with a slight elbow bend",
+      "Stop at shoulder height, lower slowly",
+      "Go light; this is a small muscle"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "shoulders"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "EZ-bar curl": {
+    "photo": "EZ-Bar_Curl",
+    "what": "Curl a zig-zag bar up to your shoulders. Builds biceps.",
+    "steps": [
+      "Stand holding the bar with palms facing up",
+      "Keep elbows pinned at your sides",
+      "Curl up to shoulder height, lower slowly"
+    ],
+    "load": "ezbar",
+    "muscles": [
+      "biceps"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Rope triceps pushdown": {
+    "photo": "Triceps_Pushdown_-_Rope_Attachment",
+    "what": "Push a rope handle down on a high cable. Builds triceps (back of the arm).",
+    "steps": [
+      "Clip a rope to the top pulley, hold both ends",
+      "Elbows at your sides, push down until arms are straight",
+      "Pull the rope ends apart at the bottom, then let it rise"
+    ],
+    "load": "machine",
+    "muscles": [
+      "triceps"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Barbell back squat": {
+    "photo": "Barbell_Squat",
+    "what": "Squat down and up with a barbell across your upper back. The main leg builder.",
+    "steps": [
+      "Set the bar on your upper back in a rack, step back",
+      "Feet shoulder-width, toes slightly out",
+      "Sit down and back until thighs are about parallel to the floor",
+      "Stand back up, keep chest up"
+    ],
+    "load": "barbell",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Romanian deadlift": {
+    "photo": "Romanian_Deadlift",
+    "what": "Hinge forward with a barbell, keeping legs nearly straight. Builds hamstrings and glutes.",
+    "steps": [
+      "Stand holding the bar at your thighs",
+      "Soft knees, push hips back and slide the bar down your legs",
+      "Stop when you feel a strong stretch behind your thighs",
+      "Squeeze your glutes to stand up"
+    ],
+    "load": "barbell",
+    "muscles": [
+      "hamstrings"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "lower back"
+    ],
+    "images": 2
+  },
+  "Bulgarian split squat": {
+    "photo": "Split_Squat_with_Dumbbells",
+    "what": "A one-leg squat with your back foot resting on a bench. Builds quads and glutes. Photo shows the floor version; same movement.",
+    "steps": [
+      "Stand in front of a bench, put the top of one foot on it behind you",
+      "Hold dumbbells at your sides",
+      "Lower straight down until the back knee nearly touches the floor",
+      "Push up through the front foot; do all reps, then switch legs"
+    ],
+    "load": "machine",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Lying leg curl": {
+    "photo": "Lying_Leg_Curls",
+    "what": "Lie face down on a machine and curl your heels to your bum. Builds hamstrings.",
+    "steps": [
+      "Lie face down, pad just above your heels",
+      "Curl your heels up toward your bum",
+      "Lower slowly over 3 seconds"
+    ],
+    "load": "machine",
+    "muscles": [
+      "hamstrings"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Standing calf raise": {
+    "photo": "Standing_Calf_Raises",
+    "what": "Rise up onto your toes under load. Builds calves.",
+    "steps": [
+      "Stand on a step or machine with heels hanging off",
+      "Let heels drop for a full stretch",
+      "Rise as high as you can on your toes, pause 1 second"
+    ],
+    "load": "machine",
+    "muscles": [
+      "calves"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Hanging knee raise": {
+    "photo": "Hanging_Leg_Raise",
+    "what": "Hang from a bar and lift your knees to your chest. Builds abs. Photo shows the harder straight-leg version; bend your knees.",
+    "steps": [
+      "Hang from a pull-up bar, arms straight",
+      "Bring knees up toward your chest, curling your hips",
+      "Lower slowly without swinging"
+    ],
+    "load": "machine",
+    "muscles": [
+      "abdominals"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Pull-up (weighted or assisted)": {
+    "photo": "Pullups",
+    "what": "Hang from a bar and pull your chin over it. Builds the back and biceps. Use the assisted machine or a band if you can't do 6 yet.",
+    "steps": [
+      "Grab the bar a bit wider than shoulders, hang with straight arms",
+      "Pull until your chin is over the bar",
+      "Lower all the way down"
+    ],
+    "load": "added",
+    "muscles": [
+      "lats"
+    ],
+    "secondary": [
+      "biceps",
+      "middle back"
+    ],
+    "images": 2
+  },
+  "Incline dumbbell press": {
+    "photo": "Incline_Dumbbell_Press",
+    "what": "Press dumbbells up on a bench tilted to about 30°. Builds the upper chest.",
+    "steps": [
+      "Set the bench to a low incline and lie back",
+      "Start with dumbbells at chest level",
+      "Press up until arms are straight, lower slowly"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "chest"
+    ],
+    "secondary": [
+      "shoulders",
+      "triceps"
+    ],
+    "images": 2
+  },
+  "Seated cable row": {
+    "photo": "Seated_Cable_Rows",
+    "what": "Sit at a low cable and pull a handle to your stomach. Builds the middle back.",
+    "steps": [
+      "Sit with feet on the platform, knees slightly bent",
+      "Pull the handle to your stomach, squeeze shoulder blades together",
+      "Let arms stretch forward without rounding your back"
+    ],
+    "load": "machine",
+    "muscles": [
+      "middle back"
+    ],
+    "secondary": [
+      "biceps",
+      "lats",
+      "shoulders"
+    ],
+    "images": 2
+  },
+  "Cable or machine chest fly": {
+    "photo": "Butterfly",
+    "what": "Bring your arms together in front of you in a hugging motion. Builds chest.",
+    "steps": [
+      "Sit at the fly machine with handles at chest height",
+      "Elbows slightly bent, bring hands together in front",
+      "Open back up slowly until you feel a chest stretch"
+    ],
+    "load": "machine",
+    "muscles": [
+      "chest"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Face pull": {
+    "photo": "Face_Pull",
+    "what": "Pull a rope toward your face on a high cable. Builds rear shoulders and keeps shoulders healthy.",
+    "steps": [
+      "Set a rope at head height, grab it palms down",
+      "Pull toward your forehead, elbows high and wide",
+      "Pause, then return slowly"
+    ],
+    "load": "machine",
+    "muscles": [
+      "shoulders"
+    ],
+    "secondary": [
+      "middle back"
+    ],
+    "images": 2
+  },
+  "Incline dumbbell curl": {
+    "photo": "Incline_Dumbbell_Curl",
+    "what": "Curl dumbbells while lying back on an incline bench. Stretches and builds the biceps.",
+    "steps": [
+      "Lie back on a bench set to about 45°, arms hanging straight",
+      "Curl both dumbbells up without moving your elbows",
+      "Lower all the way down"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "biceps"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Overhead triceps extension": {
+    "photo": "Cable_Rope_Overhead_Triceps_Extension",
+    "what": "Extend a rope or dumbbell overhead. Builds the long part of the triceps.",
+    "steps": [
+      "Face away from a cable with the rope behind your head",
+      "Elbows point forward and stay still",
+      "Straighten your arms overhead, then bend back slowly"
+    ],
+    "load": "machine",
+    "muscles": [
+      "triceps"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Deadlift (conventional or trap bar)": {
+    "photo": "Barbell_Deadlift",
+    "what": "Lift a loaded bar from the floor to standing. Builds the whole back side of the body.",
+    "steps": [
+      "Stand with the bar over your mid-foot",
+      "Hinge down and grip just outside your legs, back flat",
+      "Push the floor away and stand tall",
+      "Lower the bar the same way it came up"
+    ],
+    "load": "barbell",
+    "muscles": [
+      "lower back"
+    ],
+    "secondary": [
+      "calves",
+      "forearms",
+      "glutes"
+    ],
+    "images": 2
+  },
+  "Leg press": {
+    "photo": "Leg_Press",
+    "what": "Push a weighted platform away with your legs on a machine. Builds quads and glutes.",
+    "steps": [
+      "Sit with feet shoulder-width in the middle of the platform",
+      "Release the safety and lower until knees reach about 90°",
+      "Press back up without locking your knees"
+    ],
+    "load": "machine",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Dumbbell walking lunge": {
+    "photo": "Bodyweight_Walking_Lunge",
+    "what": "Take long steps forward, dropping your back knee each time. Builds legs. Photo is without weights; hold dumbbells at your sides.",
+    "steps": [
+      "Hold dumbbells at your sides",
+      "Step forward and lower until the back knee nearly touches the floor",
+      "Push up and step through with the other leg"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Leg extension": {
+    "photo": "Leg_Extensions",
+    "what": "Straighten your legs against a pad on a machine. Isolates the front of the thighs.",
+    "steps": [
+      "Sit with the pad on your lower shins",
+      "Straighten your legs, pause 1 second at the top",
+      "Lower slowly"
+    ],
+    "load": "machine",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Seated calf raise": {
+    "photo": "Seated_Calf_Raise",
+    "what": "Raise your heels while seated with a pad on your knees. Builds the lower calf.",
+    "steps": [
+      "Sit with the pad on your thighs, balls of feet on the step",
+      "Drop heels for a stretch",
+      "Push up onto your toes, lower slowly"
+    ],
+    "load": "machine",
+    "muscles": [
+      "calves"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Cable crunch": {
+    "photo": "Cable_Crunch",
+    "what": "Kneel at a high cable and crunch down. Builds abs.",
+    "steps": [
+      "Kneel facing the cable, hold the rope beside your head",
+      "Curl your chest down toward your knees",
+      "Hips stay still; return slowly"
+    ],
+    "load": "machine",
+    "muscles": [
+      "abdominals"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Goblet squat to box": {
+    "photo": "Goblet_Squat",
+    "what": "Hold one dumbbell at your chest and squat down to a bench or box. Builds legs and glutes with an upright, back-friendly position.",
+    "steps": [
+      "Stand in front of a bench, feet a bit wider than hips",
+      "Hold a dumbbell upright against your chest, elbows tucked",
+      "Sit back and down until you lightly touch the bench",
+      "Drive through your whole foot to stand, squeeze your glutes at the top"
+    ],
+    "load": "single",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Dumbbell Romanian deadlift": {
+    "photo": "Stiff-Legged_Dumbbell_Deadlift",
+    "what": "Hinge forward holding two dumbbells, keeping your back flat. Builds hamstrings and glutes.",
+    "steps": [
+      "Hold dumbbells in front of your thighs, soft knees",
+      "Breathe out and gently brace your belly",
+      "Push hips back and slide the dumbbells down your legs",
+      "Stop at mid-shin or when your back starts to round, then squeeze glutes to stand"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "hamstrings"
+    ],
+    "secondary": [
+      "glutes",
+      "lower back"
+    ],
+    "images": 2
+  },
+  "Seated cable row (neutral grip)": {
+    "photo": "Seated_Cable_Rows",
+    "what": "Pull a close, palms-facing handle to your stomach. Strengthens the upper back to support the shoulder.",
+    "steps": [
+      "Use the V-handle so palms face each other",
+      "Sit tall, chest up, shoulders down away from your ears",
+      "Pull to your belly button, elbows close to your sides",
+      "Return slowly; don't let the weight pull your shoulders forward"
+    ],
+    "load": "machine",
+    "muscles": [
+      "middle back"
+    ],
+    "secondary": [
+      "biceps",
+      "lats",
+      "shoulders"
+    ],
+    "images": 2,
+    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+  },
+  "Glute bridge": {
+    "photo": "Butt_Lift_Bridge",
+    "what": "Lie on your back and lift your hips. Builds glutes and is gentle on the back and pelvic floor.",
+    "steps": [
+      "Lie on your back, knees bent, feet flat and hip-width",
+      "Breathe out, gently lift your pelvic floor and draw your belly in",
+      "Press through your heels and lift your hips to a straight line",
+      "Pause 2 seconds, lower slowly. Add a dumbbell on your hips when 15 feel easy"
+    ],
+    "load": "single",
+    "muscles": [
+      "glutes"
+    ],
+    "secondary": [
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Dead bug": {
+    "photo": "Dead_Bug",
+    "what": "Lie on your back and slowly lower opposite arm and leg. Rebuilds deep core strength after pregnancy.",
+    "steps": [
+      "Lie on your back, arms up, knees bent at 90° over your hips",
+      "Press your lower back gently into the floor",
+      "Breathe out and slowly lower one leg (and the opposite arm only if your shoulder allows)",
+      "Return and switch sides. If your belly domes or your back arches, make the movement smaller"
+    ],
+    "load": "bodyweight",
+    "muscles": [
+      "abdominals"
+    ],
+    "secondary": [],
+    "images": 2
+  },
+  "Pallof press": {
+    "photo": "Pallof_Press",
+    "what": "Press a cable or band straight out from your chest and resist the twist. Trains the core to stay steady.",
+    "steps": [
+      "Stand side-on to a cable or band at chest height, hold the handle at your chest",
+      "Feet hip-width, soft knees, ribs down",
+      "Breathe out and press straight out, don't let it pull you round",
+      "Hold 2 seconds, bring it back. Do all reps, then face the other way"
+    ],
+    "load": "machine",
+    "muscles": [
+      "abdominals"
+    ],
+    "secondary": [
+      "chest",
+      "shoulders",
+      "triceps"
+    ],
+    "images": 2
+  },
+  "Dumbbell step-up": {
+    "photo": "Dumbbell_Step_Ups",
+    "what": "Step up onto a low box holding light dumbbells. Builds legs and balance.",
+    "steps": [
+      "Use a low box or step, knee height or lower",
+      "Hold light dumbbells at your sides, shoulders relaxed",
+      "Place your whole foot on the box and push through that heel to stand up",
+      "Step down slowly. Do all reps on one leg, then switch"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "quadriceps"
+    ],
+    "secondary": [
+      "calves",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2
+  },
+  "Close-grip lat pulldown (light)": {
+    "photo": "Close-Grip_Front_Lat_Pulldown",
+    "what": "Pull a close-grip bar down to your chest, keeping it light. Rebuilds back strength once your shoulder is cleared for overhead work.",
+    "steps": [
+      "Only start this once your physio clears overhead movement",
+      "Use a close or neutral grip, light weight",
+      "Pull to your upper chest, shoulders down and back",
+      "Let it rise only as high as is pain-free"
+    ],
+    "load": "machine",
+    "muscles": [
+      "lats"
+    ],
+    "secondary": [
+      "biceps",
+      "middle back",
+      "shoulders"
+    ],
+    "images": 2,
+    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+  },
+  "Band external rotation": {
+    "photo": "External_Rotation_with_Band",
+    "what": "Rotate your forearm outward against a light band with your elbow at your side. Classic shoulder rehab for the rotator cuff.",
+    "steps": [
+      "Tie a light band at elbow height, stand side-on",
+      "Elbow bent 90° and tucked against your side (a rolled towel helps)",
+      "Rotate your hand outward slowly, keeping the elbow still",
+      "Return slowly. Use the exact variation and band your physio gave you, if any"
+    ],
+    "load": "band",
+    "muscles": [
+      "shoulders"
+    ],
+    "secondary": [],
+    "images": 2,
+    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+  },
+  "Side plank from knees": {
+    "photo": "Side_Bridge",
+    "what": "Hold a side plank with knees bent. Strengthens the side of the core without straining the midline.",
+    "steps": [
+      "Lie on your side, elbow under your shoulder, knees bent behind you",
+      "Lift your hips so your body is straight from knees to head",
+      "Breathe normally and hold for the time given",
+      "Switch sides. If your shoulder complains, skip it and do a second set of bird dogs"
+    ],
+    "load": "time",
+    "muscles": [
+      "abdominals"
+    ],
+    "secondary": [
+      "shoulders"
+    ],
+    "images": 2,
+    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+  },
+  "Bird dog": {
+    "photo": "",
+    "what": "On hands and knees, reach one leg back (and the opposite arm if comfortable). Trains core and back control safely.",
+    "steps": [
+      "Start on hands and knees, hands under shoulders, knees under hips",
+      "Breathe out and gently brace your belly",
+      "Slide one leg back to straight; reach the opposite arm forward only if your shoulder allows",
+      "Pause 2 seconds without your hips rocking, return and switch"
+    ],
+    "load": "bodyweight",
+    "muscles": [
+      "lower back",
+      "abdominals",
+      "glutes"
+    ],
+    "secondary": [],
+    "images": 0
+  },
+  "Farmer's carry": {
+    "photo": "Farmers_Walk",
+    "what": "Walk while holding dumbbells at your sides. Builds grip, core and posture, the strength you use carrying kids and shopping.",
+    "steps": [
+      "Pick up two dumbbells you can hold for 30 seconds",
+      "Stand tall, shoulders down and back, ribs down",
+      "Walk slowly for the distance given",
+      "Put them down with a flat back. Use a lighter weight on the operated side if needed"
+    ],
+    "load": "dumbbell",
+    "muscles": [
+      "forearms"
+    ],
+    "secondary": [
+      "abdominals",
+      "glutes",
+      "hamstrings"
+    ],
+    "images": 2,
+    "caution": "Shoulder: only with your physio's OK. Pain-free range only; stop if you feel pinching or sharp pain."
+  }
+}

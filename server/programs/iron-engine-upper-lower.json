@@ -1,0 +1,567 @@
+{
+  "id": "iron-engine-upper-lower",
+  "name": "Iron + Engine",
+  "subtitle": "4-week hypertrophy block · upper / lower split",
+  "goal": "Muscle gain",
+  "lede": "Four training days a week. Every session starts with weights and finishes with cardio, so the lifting gets your freshest effort and the cardio builds your heart without eating into muscle gain.",
+  "daysPerWeek": "4 + 1 optional",
+  "sessionLength": "~75 min",
+  "deloadCardio": {
+    "minutes": 15
+  },
+  "weeks": [
+    {
+      "name": "Week 1",
+      "tag": "Base",
+      "rir": 3,
+      "extraSets": 0,
+      "setScale": 1,
+      "note": "Pick loads you could lift <b>3 more reps</b> with (RIR 3). Learn the movements and set your baselines.",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 2",
+      "tag": "Build",
+      "rir": 2,
+      "extraSets": 0,
+      "setScale": 1,
+      "note": "Add load or reps on every lift. Stop <b>2 reps short</b> of failure (RIR 2).",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 3",
+      "tag": "Push",
+      "rir": 1,
+      "extraSets": 1,
+      "setScale": 1,
+      "note": "Hardest week. <b>+1 set</b> on the first two lifts, stop <b>1 rep short</b> of failure (RIR 1).",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 4",
+      "tag": "Deload",
+      "rir": 4,
+      "extraSets": 0,
+      "setScale": 0.5,
+      "note": "Recovery week. <b>Half the sets</b>, same loads as Week 1, RIR 4. All cardio stays easy Zone 2. Then restart Week 1 with heavier weights.",
+      "cardio": "deload"
+    }
+  ],
+  "days": [
+    {
+      "d": "Mon",
+      "title": "Upper A",
+      "focus": "Chest & back strength",
+      "warm": 8,
+      "iron": 50,
+      "engine": 15,
+      "lifts": [
+        {
+          "name": "Barbell bench press",
+          "sets": 4,
+          "reps": "6–8",
+          "rest": "2–3 min",
+          "cue": "Shoulder blades pinned, bar to lower chest",
+          "main": true
+        },
+        {
+          "name": "Barbell bent-over row",
+          "sets": 4,
+          "reps": "6–8",
+          "rest": "2–3 min",
+          "cue": "Torso near 45°, pull to belly button",
+          "main": true
+        },
+        {
+          "name": "Seated dumbbell shoulder press",
+          "sets": 3,
+          "reps": "8–10",
+          "rest": "90 s",
+          "cue": "Elbows slightly forward of the body",
+          "main": false
+        },
+        {
+          "name": "Lat pulldown",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "90 s",
+          "cue": "Drive elbows down to your back pockets",
+          "main": false
+        },
+        {
+          "name": "Dumbbell lateral raise",
+          "sets": 3,
+          "reps": "12–15",
+          "rest": "60 s",
+          "cue": "Lead with elbows, stop at shoulder height",
+          "main": false
+        },
+        {
+          "name": "EZ-bar curl",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "60 s",
+          "cue": "Superset with the next exercise",
+          "main": false,
+          "pair": "A1"
+        },
+        {
+          "name": "Rope triceps pushdown",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "60 s",
+          "cue": "Spread the rope at the bottom",
+          "main": false,
+          "pair": "A2"
+        }
+      ],
+      "cardio": {
+        "kind": "Bike intervals",
+        "zone": "HIIT",
+        "pct": [
+          85,
+          95
+        ],
+        "steps": [
+          "3 min easy spin",
+          "6 rounds: 30 s hard / 60 s easy",
+          "3 min easy cool-down"
+        ],
+        "phases": [
+          [
+            "Warm-up",
+            180,
+            "warm"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard",
+            30,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Cool-down",
+            180,
+            "cool"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Tue",
+      "title": "Lower A",
+      "focus": "Squat focus",
+      "warm": 10,
+      "iron": 50,
+      "engine": 20,
+      "lifts": [
+        {
+          "name": "Barbell back squat",
+          "sets": 4,
+          "reps": "5–8",
+          "rest": "3 min",
+          "cue": "Brace hard, hips and knees bend together",
+          "main": true
+        },
+        {
+          "name": "Romanian deadlift",
+          "sets": 3,
+          "reps": "8–10",
+          "rest": "2 min",
+          "cue": "Push hips back, bar close to legs",
+          "main": true
+        },
+        {
+          "name": "Bulgarian split squat",
+          "sets": 3,
+          "reps": "10 / leg",
+          "rest": "90 s",
+          "cue": "Rear foot on bench, front shin near vertical",
+          "main": false
+        },
+        {
+          "name": "Lying leg curl",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "60 s",
+          "cue": "Slow 3-second lowering",
+          "main": false
+        },
+        {
+          "name": "Standing calf raise",
+          "sets": 4,
+          "reps": "10–15",
+          "rest": "60 s",
+          "cue": "Full stretch at the bottom, pause 1 s",
+          "main": false
+        },
+        {
+          "name": "Hanging knee raise",
+          "sets": 3,
+          "reps": "12",
+          "rest": "60 s",
+          "cue": "Curl the pelvis up, no swinging",
+          "main": false
+        }
+      ],
+      "cardio": {
+        "kind": "Incline treadmill walk",
+        "zone": "Zone 2",
+        "pct": [
+          60,
+          70
+        ],
+        "steps": [
+          "20 min at 8–12% incline, 4.5–5.5 km/h",
+          "You should be able to hold a conversation"
+        ],
+        "phases": [
+          [
+            "Steady Zone 2",
+            1200,
+            "steady"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Wed",
+      "rest": true,
+      "title": "Rest",
+      "focus": "Active recovery",
+      "items": [
+        "Optional 30-minute easy walk",
+        "5–10 minutes of mobility: hips, thoracic spine, shoulders",
+        "Hit your protein target even on rest days"
+      ]
+    },
+    {
+      "d": "Thu",
+      "title": "Upper B",
+      "focus": "Back width & upper chest",
+      "warm": 8,
+      "iron": 50,
+      "engine": 15,
+      "lifts": [
+        {
+          "name": "Pull-up (weighted or assisted)",
+          "sets": 4,
+          "reps": "6–10",
+          "rest": "2–3 min",
+          "cue": "Full hang to chin over bar",
+          "main": true
+        },
+        {
+          "name": "Incline dumbbell press",
+          "sets": 4,
+          "reps": "8–10",
+          "rest": "2 min",
+          "cue": "Bench at 30°, deep stretch at the bottom",
+          "main": true
+        },
+        {
+          "name": "Seated cable row",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "90 s",
+          "cue": "Chest up, squeeze shoulder blades",
+          "main": false
+        },
+        {
+          "name": "Cable or machine chest fly",
+          "sets": 3,
+          "reps": "12–15",
+          "rest": "60 s",
+          "cue": "Soft elbows, hug a barrel",
+          "main": false
+        },
+        {
+          "name": "Face pull",
+          "sets": 3,
+          "reps": "15",
+          "rest": "60 s",
+          "cue": "Pull to forehead, thumbs back",
+          "main": false
+        },
+        {
+          "name": "Incline dumbbell curl",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "60 s",
+          "cue": "Superset with the next exercise",
+          "main": false,
+          "pair": "A1"
+        },
+        {
+          "name": "Overhead triceps extension",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "60 s",
+          "cue": "Cable or dumbbell, full stretch",
+          "main": false,
+          "pair": "A2"
+        }
+      ],
+      "cardio": {
+        "kind": "Rowing intervals",
+        "zone": "HIIT",
+        "pct": [
+          85,
+          95
+        ],
+        "steps": [
+          "3 min easy row",
+          "5 rounds: 250 m hard (about 1 min) / 60 s easy",
+          "2 min easy cool-down"
+        ],
+        "phases": [
+          [
+            "Warm-up",
+            180,
+            "warm"
+          ],
+          [
+            "Hard · 250 m",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard · 250 m",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard · 250 m",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard · 250 m",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Hard · 250 m",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Cool-down",
+            120,
+            "cool"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Fri",
+      "title": "Lower B",
+      "focus": "Hinge focus",
+      "warm": 10,
+      "iron": 50,
+      "engine": 20,
+      "lifts": [
+        {
+          "name": "Deadlift (conventional or trap bar)",
+          "sets": 3,
+          "reps": "4–6",
+          "rest": "3 min",
+          "cue": "Pull the slack out, push the floor away",
+          "main": true
+        },
+        {
+          "name": "Leg press",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": "2 min",
+          "cue": "Feet mid-plate, knees track over toes",
+          "main": true
+        },
+        {
+          "name": "Dumbbell walking lunge",
+          "sets": 3,
+          "reps": "12 / leg",
+          "rest": "90 s",
+          "cue": "Long step, back knee kisses the floor",
+          "main": false
+        },
+        {
+          "name": "Leg extension",
+          "sets": 3,
+          "reps": "12–15",
+          "rest": "60 s",
+          "cue": "Pause 1 s at the top",
+          "main": false
+        },
+        {
+          "name": "Seated calf raise",
+          "sets": 3,
+          "reps": "12–15",
+          "rest": "60 s",
+          "cue": "Full range, slow lowering",
+          "main": false
+        },
+        {
+          "name": "Cable crunch",
+          "sets": 3,
+          "reps": "12–15",
+          "rest": "60 s",
+          "cue": "Round the spine, hips stay still",
+          "main": false
+        }
+      ],
+      "cardio": {
+        "kind": "Bike or cross-trainer",
+        "zone": "Zone 2",
+        "pct": [
+          60,
+          70
+        ],
+        "steps": [
+          "20 min steady pace",
+          "Breathing through the nose should feel possible"
+        ],
+        "phases": [
+          [
+            "Steady Zone 2",
+            1200,
+            "steady"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Sat",
+      "rest": true,
+      "title": "Optional",
+      "focus": "Easy cardio or sport",
+      "items": [
+        "30–45 min Zone 2 (easy, conversational pace): hike, swim, cycle or a social game",
+        "Skip it if you feel run down, legs are sore, or sleep was poor",
+        "Never go hard here; Monday's session matters more"
+      ]
+    },
+    {
+      "d": "Sun",
+      "rest": true,
+      "title": "Rest",
+      "focus": "Full rest",
+      "items": [
+        "No training",
+        "Plan meals for the week and prep protein",
+        "Check your logged loads and set Monday's targets"
+      ]
+    }
+  ],
+  "rules": [
+    [
+      "Progressive overload",
+      "+2.5 kg",
+      "When you hit the top of the rep range on every set, add 2.5 kg to upper-body lifts or 5 kg to lower-body lifts next session."
+    ],
+    [
+      "Protein",
+      "1.6–2.2 g/kg",
+      "Around 130–175 g a day at 80 kg, split over 3–5 meals with 30–40 g each."
+    ],
+    [
+      "Calories",
+      "+250–400",
+      "A small daily surplus over maintenance. Aim to gain 0.25–0.5% of body weight per week."
+    ],
+    [
+      "Sleep",
+      "7–9 h",
+      "Most of the growth happens here. Short sleep stalls strength and recovery faster than anything else."
+    ],
+    [
+      "Cardio dose",
+      "15–20 min",
+      "Kept short and placed after lifting. Easy Zone 2 after leg days, short intervals after upper days."
+    ],
+    [
+      "RIR",
+      "Reps in reserve",
+      "How many more clean reps you could have done. RIR 2 means you stopped two reps short of failure."
+    ]
+  ]
+}

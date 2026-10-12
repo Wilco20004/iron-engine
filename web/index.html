@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2442c9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Iron + Engine</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+</head>
+<body>
+
+
+<div class="wrap" id="appView" hidden>
+  <header>
+    <div class="topbar"><span class="label" id="subtitle"></span><button type="button" class="me-btn" id="meBtn" aria-label="Your profile and settings"></button></div>
+    <h1 id="progName"></h1>
+    <p class="lede" id="lede"></p>
+    <p class="notice" id="notice" hidden></p>
+    <div class="profile" id="profileChips"></div>
+    <span class="sync" id="syncStatus" data-s="wait" role="status">Loading your log…</span>
+  </header>
+
+  <section style="display:grid; gap:12px">
+    <span class="label">Pick the week</span>
+    <div class="tabs" id="weekTabs" role="tablist" aria-label="Training week"></div>
+  </section>
+
+  <section style="display:grid; gap:12px">
+    <span class="label">Pick the day</span>
+    <div class="week" id="weekGrid" role="tablist" aria-label="Day of week"></div>
+  </section>
+
+  <section class="session" id="session" aria-live="polite"></section>
+
+  <section style="display:grid; gap:14px" id="glossary">
+    <h2>Gym words, in plain English</h2>
+    <dl class="gloss">
+      <div><dt>Rep</dt><dd>One full movement, for example lowering the bar to your chest and pushing it back up once.</dd></div>
+      <div><dt>Set</dt><dd>A group of reps done without stopping. "4 × 6–8" means 4 sets of 6 to 8 reps each.</dd></div>
+      <div><dt>Rest</dt><dd>How long to sit or walk around between sets before starting the next one.</dd></div>
+      <div><dt>RIR</dt><dd>Reps in reserve: how many more reps you could still have done. RIR 2 means stop when you have about 2 left in the tank.</dd></div>
+      <div><dt>Fail (F)</dt><dd>You kept going until you couldn't do another clean rep. Tick <b>Fail</b> on that set; it shows as "8F" in your log.</dd></div>
+      <div><dt>Load</dt><dd>The weight you used, in kg. Write it down so you know what to beat next time.</dd></div>
+      <div><dt>Superset</dt><dd>Two exercises done back to back (marked A1 and A2), then you rest. Saves time on arm work.</dd></div>
+      <div><dt>Barbell</dt><dd>The long bar you load plates on. A standard Olympic bar weighs 20 kg on its own.</dd></div>
+      <div><dt>Dumbbell</dt><dd>A short handheld weight, one in each hand.</dd></div>
+      <div><dt>EZ-bar</dt><dd>A short zig-zag barbell that is easier on the wrists for curls.</dd></div>
+      <div><dt>Cable</dt><dd>A machine with a pulley and a stack of weights. You clip on a handle or rope.</dd></div>
+      <div><dt>Hinge</dt><dd>Bending at the hips with a flat back, like closing a car door with your bum. Deadlifts are hinges.</dd></div>
+      <div><dt>Warm-up set</dt><dd>A light practice set before your real sets. It doesn't count toward the sets in the table.</dd></div>
+      <div><dt>Zone 2</dt><dd>Easy cardio where you can still talk in full sentences. Builds fitness without tiring your muscles.</dd></div>
+      <div><dt>HIIT</dt><dd>High-intensity intervals: short hard bursts followed by easy recovery, repeated.</dd></div>
+      <div><dt>Max HR</dt><dd>Your highest heart rate, roughly 220 minus your age. A watch or chest strap shows your live heart rate.</dd></div>
+      <div><dt>Deload</dt><dd>A planned easy week so your body can recover and come back stronger.</dd></div>
+    </dl>
+  </section>
+
+  <section style="display:grid; gap:18px">
+    <h2>What makes it work</h2>
+    <div class="rules" id="rules"></div>
+  </section>
+
+  <div class="foot">
+    <span>Exercise photos: Free Exercise DB (public domain). Your log is saved on your own server, so it works on any device you sign in on. Check with a doctor before starting if you have any heart, joint or blood-pressure concerns.</span>
+    <button class="btn" id="resetBtn" type="button">Clear my log</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden></div>
+<main class="auth" id="authView" hidden></main>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+{
+  "id": "foundations-2day",
+  "name": "Strong Foundations",
+  "subtitle": "4-week beginner block · 2 full-body days",
+  "goal": "Strength, core & fat loss",
+  "daysPerWeek": "2 + daily walks",
+  "sessionLength": "~60 min",
+  "lede": "Two full-body sessions a week. Each one starts with weights and finishes with cardio. The program protects the shoulder, rebuilds core strength after pregnancy, and builds general fitness for fat loss.",
+  "notice": "Built around a past shoulder operation and two pregnancies. Exercises marked with ⚠ need your physio's OK first. Stop anything that causes sharp, pinching or joint pain, or leaking, heaviness or pelvic pressure. Check with your physio or doctor before starting.",
+  "deloadCardio": {
+    "minutes": 15
+  },
+  "weeks": [
+    {
+      "name": "Week 1",
+      "tag": "Learn",
+      "rir": 3,
+      "extraSets": 0,
+      "setScale": 0.67,
+      "note": "Learn the movements with <b>2 sets</b> each. Pick weights that feel easy to moderate: about <b>3 reps left</b> in the tank.",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 2",
+      "tag": "Build",
+      "rir": 3,
+      "extraSets": 0,
+      "setScale": 1,
+      "note": "Now <b>3 sets</b> each. Same weights as Week 1, or a little heavier if every rep felt smooth.",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 3",
+      "tag": "Grow",
+      "rir": 2,
+      "extraSets": 0,
+      "setScale": 1,
+      "note": "Add a little weight where you can. Stop about <b>2 reps short</b> of failure, never to failure.",
+      "cardio": "normal"
+    },
+    {
+      "name": "Week 4",
+      "tag": "Recover",
+      "rir": 4,
+      "extraSets": 0,
+      "setScale": 0.67,
+      "note": "Easy week: <b>2 sets</b>, Week 2 weights, easy cardio only. Then repeat the block a little heavier.",
+      "cardio": "deload"
+    }
+  ],
+  "days": [
+    {
+      "d": "Mon",
+      "title": "Full Body A",
+      "focus": "Squat, hinge & core",
+      "warm": 8,
+      "iron": 35,
+      "engine": 20,
+      "lifts": [
+        {
+          "name": "Goblet squat to box",
+          "sets": 3,
+          "reps": "10",
+          "rest": "90 s",
+          "cue": "Sit back to the box, chest tall",
+          "main": true
+        },
+        {
+          "name": "Dumbbell Romanian deadlift",
+          "sets": 3,
+          "reps": "10",
+          "rest": "90 s",
+          "cue": "Hips back, flat back, dumbbells close",
+          "main": true
+        },
+        {
+          "name": "Seated cable row (neutral grip)",
+          "sets": 3,
+          "reps": "12",
+          "rest": "60 s",
+          "cue": "Shoulders down, elbows close",
+          "main": false
+        },
+        {
+          "name": "Glute bridge",
+          "sets": 3,
+          "reps": "12",
+          "rest": "60 s",
+          "cue": "Breathe out as you lift, pause 2 s",
+          "main": false
+        },
+        {
+          "name": "Dead bug",
+          "sets": 3,
+          "reps": "6 / side",
+          "rest": "45 s",
+          "cue": "Lower back stays gently on the floor",
+          "main": false
+        },
+        {
+          "name": "Pallof press",
+          "sets": 2,
+          "reps": "10 / side",
+          "rest": "45 s",
+          "cue": "Don't let it twist you",
+          "main": false
+        }
+      ],
+      "cardio": {
+        "kind": "Incline treadmill walk",
+        "zone": "Zone 2",
+        "pct": [
+          60,
+          70
+        ],
+        "steps": [
+          "20 min at 5–10% incline, brisk walking pace",
+          "You should be able to talk in full sentences"
+        ],
+        "phases": [
+          [
+            "Steady Zone 2",
+            1200,
+            "steady"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Tue",
+      "rest": true,
+      "title": "Walk",
+      "focus": "Daily movement",
+      "items": [
+        "30-minute walk, with the kids or on your own",
+        "2 minutes of breathing practice: breathe in to expand your ribs, breathe out and gently draw your belly and pelvic floor in",
+        "Aim for 7,000–10,000 steps a day; this does a lot for fat loss"
+      ]
+    },
+    {
+      "d": "Wed",
+      "rest": true,
+      "title": "Rest",
+      "focus": "Recovery",
+      "items": [
+        "Easy day",
+        "Shoulder exercises from your physio, if you have them"
+      ]
+    },
+    {
+      "d": "Thu",
+      "title": "Full Body B",
+      "focus": "Legs, back & carries",
+      "warm": 8,
+      "iron": 35,
+      "engine": 20,
+      "lifts": [
+        {
+          "name": "Leg press",
+          "sets": 3,
+          "reps": "12",
+          "rest": "90 s",
+          "cue": "Feet mid-plate, control the way down",
+          "main": true
+        },
+        {
+          "name": "Dumbbell step-up",
+          "sets": 3,
+          "reps": "8 / leg",
+          "rest": "60 s",
+          "cue": "Push through the heel on the box",
+          "main": true
+        },
+        {
+          "name": "Close-grip lat pulldown (light)",
+          "sets": 3,
+          "reps": "12",
+          "rest": "60 s",
+          "cue": "Pain-free range only",
+          "main": false
+        },
+        {
+          "name": "Band external rotation",
+          "sets": 2,
+          "reps": "15",
+          "rest": "45 s",
+          "cue": "Elbow pinned to your side",
+          "main": false
+        },
+        {
+          "name": "Side plank from knees",
+          "sets": 3,
+          "reps": "20 s / side",
+          "rest": "45 s",
+          "cue": "Straight line knees to head",
+          "main": false
+        },
+        {
+          "name": "Bird dog",
+          "sets": 3,
+          "reps": "6 / side",
+          "rest": "45 s",
+          "cue": "Hips stay level",
+          "main": false
+        },
+        {
+          "name": "Farmer's carry",
+          "sets": 3,
+          "reps": "30 m",
+          "rest": "60 s",
+          "cue": "Tall posture, shoulders down",
+          "main": false
+        }
+      ],
+      "cardio": {
+        "kind": "Bike intervals",
+        "zone": "Intervals",
+        "pct": [
+          75,
+          85
+        ],
+        "steps": [
+          "4 min easy spin",
+          "6 rounds: 1 min brisk / 1 min easy",
+          "4 min easy cool-down"
+        ],
+        "phases": [
+          [
+            "Warm-up",
+            240,
+            "warm"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Brisk",
+            60,
+            "hard"
+          ],
+          [
+            "Easy",
+            60,
+            "easy"
+          ],
+          [
+            "Cool-down",
+            240,
+            "cool"
+          ]
+        ]
+      }
+    },
+    {
+      "d": "Fri",
+      "rest": true,
+      "title": "Walk",
+      "focus": "Daily movement",
+      "items": [
+        "30-minute walk",
+        "Optional: 10 minutes of the core work from Full Body A (dead bug, glute bridge)"
+      ]
+    },
+    {
+      "d": "Sat",
+      "rest": true,
+      "title": "Optional",
+      "focus": "Fun activity",
+      "items": [
+        "Something active you enjoy: swim, hike, cycle, play at the park",
+        "Keep it easy and conversational"
+      ]
+    },
+    {
+      "d": "Sun",
+      "rest": true,
+      "title": "Rest",
+      "focus": "Full rest",
+      "items": [
+        "No training",
+        "Plan the week's meals with protein at every meal"
+      ]
+    }
+  ],
+  "rules": [
+    [
+      "Shoulder first",
+      "Pain-free",
+      "Train in a pain-free range. Pinching or sharp pain means stop that exercise and tell your physio. Normal muscle tiredness is fine."
+    ],
+    [
+      "Core rule",
+      "Breathe out",
+      "Breathe out and gently draw your belly and pelvic floor in at the hardest part of each rep. Doming along the middle of your tummy means: make it easier."
+    ],
+    [
+      "Protein",
+      "1.6 g/kg",
+      "Around 100–110 g a day at 65 kg. Protein at every meal helps keep muscle while losing fat."
+    ],
+    [
+      "Calories",
+      "−300–500",
+      "A small daily deficit. Aim to lose about 0.5% of body weight per week; faster tends to cost muscle."
+    ],
+    [
+      "Steps",
+      "7–10k",
+      "Daily walking burns more than most workouts and is easy on the joints."
+    ],
+    [
+      "Sleep",
+      "7–9 h",
+      "Hard with kids, so protect what you can. Poor sleep makes cravings and fatigue worse."
+    ]
+  ]
+}
