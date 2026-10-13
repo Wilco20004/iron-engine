@@ -42,11 +42,18 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
   **Cardio**, **Other day** (another session this week, or the next
   unfinished one), and **Sync** (upload waiting sets and reload).
 - **Exercise screen**: shows the next set's weight and reps.
-  - Tap (or START): set done. The rest countdown starts; a short buzz at 10 s
-    left, a long buzz and the screen lights when rest is over.
-  - Swipe up/down: reps -1/+1. During rest, swipe up adds 15 s.
-  - Tap the top of the screen (or hold/menu): change weight, reps, or mark the
-    set as taken to failure.
+  - START: set done. The rest countdown starts; a short buzz at 10 s left, a
+    long buzz and the screen lights when rest is over.
+  - Taps only edit, so a stray touch never logs a set: tap the weight or the
+    reps to change it, anywhere else (or hold/menu) for the edit menu, which
+    also marks the set as taken to failure.
+  - Changing a value: tap - / + (weight: 2.5 kg top row, 1 kg bottom row) or
+    swipe right / left for +1 / -1. Save or START keeps it; Back cancels.
+  - The "i" on the left opens the how-to (one step per page, swipe up for the
+    next); the picture on the right opens the start and finish photos (tap to
+    switch). Photos come from `/watch/photo/` on the server.
+  - During rest, taps are ignored. START skips the rest; swipe up adds 15 s.
+  - Swipe up/down: reps -1/+1.
   - Back: return to the menu.
 - **Cardio**: tap to start/pause, swipe up to skip a part. Each phase change
   buzzes (double buzz when a hard interval starts). Minutes are saved at the end.

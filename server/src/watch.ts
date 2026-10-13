@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import path from 'path';
 import { NextFunction, Request, Response, Router } from 'express';
 import { db, ProfileRow } from './db';
 import { Plan, parseKey, slug } from './plan';
@@ -100,6 +101,7 @@ function session(p: ProfileRow, week?: number, day?: number) {
     title: ascii(`${tday.d} ${tday.title}`),
     lifts: tday.lifts.map(l => {
       const e = entries[`${w}-${d}-${slug(l.name)}`];
+      const info = library()[l.name];
       return {
         name: ascii(l.name).slice(0, 40),
         sets: setsFor(l, wk),
@@ -109,6 +111,10 @@ function session(p: ProfileRow, week?: number, day?: number) {
         load: loadLabel(l.name),
         kg: suggestKg(p.id, block.number, plan, entries, w!, l.name),
         logged: ((e?.sets as Entry[] | undefined) ?? []).filter(s => s.done).map(s => ({ kg: s.kg ?? '', reps: s.reps ?? '', fail: !!s.fail })),
+        // For the watch's info and photo pages; photos come from /watch/photo/<photo>-<n>.jpg.
+        what: ascii(String(info?.what ?? '')).slice(0, 160),
+        steps: ((info?.steps ?? []) as string[]).slice(0, 8).map(s => ascii(s).slice(0, 120)),
+        photo: info?.photo && info.images ? String(info.photo) : '',
       };
     }),
     cardio: { ...cardioFor(plan, tday, wk), done: !!entries[`${w}-${d}-cardio`]?.done },
@@ -142,6 +148,16 @@ watch.get('/session', (req, res) => {
   const w = int(req.query.week), d = int(req.query.day);
   if (Number.isNaN(w) || Number.isNaN(d)) return res.status(400).json({ error: 'week and day must be numbers' });
   res.json(session(res.locals.profile, w, d));
+});
+
+// Exercise photos (start -0, finish -1) for the watch, behind the watch key so
+// they come through the same proxy location as the rest of /watch.
+const photoDir = path.join(__dirname, '..', '..', 'web', 'dist', 'exercises');
+watch.get('/photo/:file', (req, res) => {
+  if (!/^[A-Za-z0-9_-]+-[01]\.jpg$/.test(req.params.file)) return res.status(404).json({ error: 'No such photo' });
+  res.sendFile(path.join(photoDir, req.params.file), err => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'No such photo' });
+  });
 });
 
 // One finished set: { week, day, lift (index), set (index), kg, reps, fail }.

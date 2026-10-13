@@ -83,7 +83,7 @@ class IronApp extends Application.AppBase {
         }, method(:onSession));
     }
 
-    function onSession(code, data) {
+    function onSession(code as Number, data as Dictionary or String or Null) as Void {
         _loading = false;
         if (code == 200 && data instanceof Dictionary) {
             session = data;
@@ -164,7 +164,7 @@ class IronApp extends Application.AppBase {
         }, method(:onPosted));
     }
 
-    function onPosted(code, data) {
+    function onPosted(code as Number, data as Dictionary or String or Null) as Void {
         _busy = false;
         // 400 means the plan changed since this set was done; drop it rather than block the queue.
         if (code == 200 || code == 400) {

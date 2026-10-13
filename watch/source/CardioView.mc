@@ -51,12 +51,14 @@ class CardioView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         var rounds = countHard(phases.size());
         if (rounds > 0 && (p[2].equals("hard") || p[2].equals("easy"))) {
-            dc.drawText(cx, h * 0.67, Graphics.FONT_XTINY, "Round " + countHard(idx + 1) + " of " + rounds, c);
+            dc.drawText(cx, h * 0.68, Graphics.FONT_SMALL, "Round " + countHard(idx + 1) + "/" + rounds, c);
         }
-        if (idx + 1 < phases.size()) {
-            dc.drawText(cx, h * 0.75, Graphics.FONT_XTINY, "Next: " + phases[idx + 1][0] + " " + clock(phases[idx + 1][1]), c);
+        if (!running) {
+            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, h * 0.80, Graphics.FONT_SMALL, "Tap to start", c);
+        } else if (idx + 1 < phases.size()) {
+            dc.drawText(cx, h * 0.80, Graphics.FONT_SMALL, "Next: " + phases[idx + 1][0], c);
         }
-        dc.drawText(cx, h * 0.85, Graphics.FONT_XTINY, running ? "Tap: pause  Swipe: skip" : "Tap to start", c);
     }
 
     function countHard(upTo) {

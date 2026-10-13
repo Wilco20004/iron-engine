@@ -14,103 +14,63 @@ class EditMenu extends WatchUi.Menu2 {
 
 class EditMenuDelegate extends WatchUi.Menu2InputDelegate {
     hidden var view;
-    hidden var menu;
+    hidden var editor;
 
     function initialize(v, m) {
         Menu2InputDelegate.initialize();
         view = v;
-        menu = m;
+        editor = new SetEditor(v, m);
     }
 
     function onSelect(item) {
         var id = item.getId();
         if (id == :kg) {
-            var kg = view.kg.toFloat();
-            var f = new NumberFactory(0.0, 0.5, 601);
-            pushPicker("kg", f, f.indexOf(kg == null ? 20.0 : kg), method(:onKg));
+            editor.editKg();
         } else if (id == :reps) {
-            var r = view.reps.toNumber();
-            var f2 = new NumberFactory(0, 1, 181);
-            pushPicker("reps", f2, f2.indexOf(r == null ? 8 : r), method(:onReps));
+            editor.editReps();
         } else if (id == :fail) {
             view.fail = (item as WatchUi.ToggleMenuItem).isEnabled();
         }
     }
+}
+
+// Opens the kg or reps stepper for the next set. Used from the edit menu and by
+// tapping the weight or reps on the exercise screen (menu is null then).
+class SetEditor {
+    hidden var view;
+    hidden var menu;
+
+    function initialize(v, m) {
+        view = v;
+        menu = m;
+    }
+
+    function editKg() {
+        var kg = view.kg.toFloat();
+        push(new StepperView("kg", kg == null ? 20.0 : kg, 2.5, 1, method(:onKg)));
+    }
+
+    function editReps() {
+        var r = view.reps.toNumber();
+        push(new StepperView("reps", r == null ? 8 : r, null, 1, method(:onReps)));
+    }
 
     function onKg(value) as Void {
         view.kg = formatNumber(value);
-        menu.getItem(0).setSubLabel(view.kg + " kg");
+        if (menu != null) {
+            menu.getItem(0).setSubLabel(view.kg + " kg");
+        }
     }
 
     function onReps(value) as Void {
         view.reps = value.toNumber().toString();
-        menu.getItem(1).setSubLabel(view.reps);
-    }
-
-    function pushPicker(label, factory, index, callback) {
-        var title = new WatchUi.Text({
-            :text => label, :color => Graphics.COLOR_WHITE, :font => Graphics.FONT_SMALL,
-            :locX => WatchUi.LAYOUT_HALIGN_CENTER, :locY => WatchUi.LAYOUT_VALIGN_BOTTOM
-        });
-        var picker = new WatchUi.Picker({:title => title, :pattern => [factory], :defaults => [index]});
-        WatchUi.pushView(picker, new ValuePickerDelegate(callback), WatchUi.SLIDE_UP);
-    }
-}
-
-class NumberFactory extends WatchUi.PickerFactory {
-    hidden var start;
-    hidden var step;
-    hidden var count;
-
-    function initialize(s, st, n) {
-        PickerFactory.initialize();
-        start = s;
-        step = st;
-        count = n;
-    }
-
-    function getSize() {
-        return count;
-    }
-
-    function getValue(index) {
-        return start + index * step;
-    }
-
-    function getDrawable(index, selected) {
-        return new WatchUi.Text({
-            :text => formatNumber(getValue(index)), :color => Graphics.COLOR_WHITE,
-            :font => Graphics.FONT_NUMBER_MEDIUM,
-            :locX => WatchUi.LAYOUT_HALIGN_CENTER, :locY => WatchUi.LAYOUT_VALIGN_CENTER
-        });
-    }
-
-    function indexOf(value) {
-        var i = ((value - start) / step + 0.5).toNumber();
-        if (i < 0) {
-            return 0;
+        if (menu != null) {
+            menu.getItem(1).setSubLabel(view.reps);
         }
-        return i >= count ? count - 1 : i;
-    }
-}
-
-class ValuePickerDelegate extends WatchUi.PickerDelegate {
-    hidden var callback;
-
-    function initialize(cb) {
-        PickerDelegate.initialize();
-        callback = cb;
     }
 
-    function onAccept(values) {
-        callback.invoke(values[0]);
-        WatchUi.popView(WatchUi.SLIDE_DOWN);
-        return true;
-    }
-
-    function onCancel() {
-        WatchUi.popView(WatchUi.SLIDE_DOWN);
-        return true;
+    function push(stepper) {
+        WatchUi.pushView(stepper, new StepperDelegate(stepper), WatchUi.SLIDE_UP);
     }
 }
 
