@@ -1,0 +1,8 @@
+<settings>
+    <setting propertyKey="@Properties.serverUrl" title="@Strings.ServerUrlTitle">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+    <setting propertyKey="@Properties.watchKey" title="@Strings.WatchKeyTitle">
+        <settingConfig type="alphaNumeric" />
+    </setting>
+</settings>

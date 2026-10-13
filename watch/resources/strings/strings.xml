@@ -1,0 +1,5 @@
+<strings>
+    <string id="AppName">Iron + Engine</string>
+    <string id="ServerUrlTitle">Server address, e.g. https://your-domain/iron</string>
+    <string id="WatchKeyTitle">Watch key (app: Settings, Garmin watch)</string>
+</strings>

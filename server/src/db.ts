@@ -72,6 +72,9 @@ function hasColumn(table: string, column: string) {
 if (!hasColumn('profiles', 'notes')) {
   db.exec(`ALTER TABLE profiles ADD COLUMN notes TEXT NOT NULL DEFAULT ''`);
 }
+if (!hasColumn('profiles', 'watch_key')) {
+  db.exec(`ALTER TABLE profiles ADD COLUMN watch_key TEXT`);
+}
 
 // log_entries: one row per logged item (an exercise, the cardio, or an
 // "ended early" note) within a block. Version 1 had no block_id; that table
@@ -98,6 +101,7 @@ export type ProfileRow = {
   age: number | null;
   pin_hash: string | null;
   notes: string;
+  watch_key: string | null;
   created_at: string;
 };
 

@@ -224,8 +224,9 @@ function weightHint(name) {
   }
 }
 function renderSheet() {
-  const day = DAYS[state.day], wk = WEEKS[state.week], n = day.lifts.length;
+  // Settings can open on a rest day, which has no lifts.
   if (sheetI === "settings") return renderSettings();
+  const day = DAYS[state.day], wk = WEEKS[state.week], n = day.lifts.length;
   if (sheetI === "end") return renderEndSheet();
   if (sheetI === n) return renderCardioSheet();
   const l = day.lifts[sheetI], e = entryFor(sheetI), info = INFO[l[0]];
@@ -726,10 +727,10 @@ authView.addEventListener("submit", async e => {
 });
 
 /* ---------- settings ---------- */
-let settingsMsg = {}, newBlockArmed = false, connArmed = false, connectorUrl = "";
+let settingsMsg = {}, newBlockArmed = false, connArmed = false, connectorUrl = "", watchKey = "", watchArmed = false;
 async function openSettings() {
   try { authPrograms = await api.programs(); } catch (e) {}
-  settingsMsg = {}; newBlockArmed = false; connArmed = false; connectorUrl = ""; openSheet("settings");
+  settingsMsg = {}; newBlockArmed = false; connArmed = false; connectorUrl = ""; watchKey = ""; watchArmed = false; openSheet("settings");
 }
 function renderSettings() {
   const m = k => settingsMsg[k] ? `<p class="${settingsMsg[k].ok ? "ok" : "err"}" role="status">${esc(settingsMsg[k].text)}</p>` : "";
@@ -754,6 +755,11 @@ function renderSettings() {
         <button type="button" class="btn" data-copy-log style="justify-self:start">Copy my log</button>
         <label>Import a log (JSON)<textarea id="imp-json" placeholder='{"0-0-0": {"sets": [...]}}'></textarea></label>
         <button type="button" class="btn" data-import-log style="justify-self:start">Import</button>${m("log")}
+      </div>
+      <div class="settings-sec form"><span class="label">Garmin watch</span>
+        <p class="wt-hint">In the Garmin Connect app, open the Iron + Engine watch app's settings and enter your server address (for example https://your-domain/iron) and this watch key. The key only gives access to your own training.</p>
+        ${watchKey ? `<input class="sin" id="watch-key" readonly value="${esc(watchKey)}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-watch-copy>Copy key</button><button type="button" class="btn" data-watch-new>${watchArmed ? "Tap again: the watch must be updated" : "Make a new key"}</button></div>` : `<button type="button" class="btn" data-watch-show style="justify-self:start">Show watch key</button>`}${m("watch")}
       </div>
       <div class="settings-sec form"><span class="label">Claude connector</span>
         <p class="wt-hint">Lets Claude read your logs and change training plans. In Claude, go to Settings → Connectors → Add custom connector and paste this link. Anyone with the link can read and change everyone's training, so keep it private.</p>
@@ -781,6 +787,14 @@ async function settingsClick(t) {
       await flush();
       await api.startBlock(document.getElementById("set-prog").value);
       closeSheet(); await startApp();
+    } else if (t.hasAttribute("data-watch-show")) {
+      watchKey = (await api.watchKey()).key; renderSettings();
+    } else if (t.hasAttribute("data-watch-new")) {
+      if (!watchArmed) { watchArmed = true; renderSettings(); return true; }
+      watchArmed = false; watchKey = (await api.regenerateWatchKey()).key; say("watch", "New key made. Enter it in the watch app's settings.", true);
+    } else if (t.hasAttribute("data-watch-copy")) {
+      try { await navigator.clipboard.writeText(watchKey); say("watch", "Key copied.", true); }
+      catch (e) { document.getElementById("watch-key").select(); say("watch", "Copy the selected key.", true); }
     } else if (t.hasAttribute("data-conn-show")) {
       connectorUrl = (await api.connector()).url; renderSettings();
     } else if (t.hasAttribute("data-conn-new")) {
@@ -807,7 +821,7 @@ async function settingsClick(t) {
     } else return false;
   } catch (e) {
     if (e.status === 401) { showAuth(); return true; }
-    const k = t.hasAttribute("data-add-person") ? "add" : t.hasAttribute("data-import-log") || t.hasAttribute("data-copy-log") ? "log" : t.hasAttribute("data-new-block") ? "block" : /data-conn/.test(t.outerHTML) ? "conn" : "me";
+    const k = t.hasAttribute("data-add-person") ? "add" : t.hasAttribute("data-import-log") || t.hasAttribute("data-copy-log") ? "log" : t.hasAttribute("data-new-block") ? "block" : /data-conn/.test(t.outerHTML) ? "conn" : /data-watch/.test(t.outerHTML) ? "watch" : "me";
     say(k, e.message, false);
   }
   return true;

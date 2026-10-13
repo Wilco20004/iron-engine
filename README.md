@@ -86,6 +86,14 @@ Tools: `list_people`, `get_plan`, `update_plan`, `get_log`, `get_progress`,
 The endpoint also accepts the secret as `Authorization: Bearer <secret>` on
 `POST /mcp`.
 
+## Garmin watch app
+
+`watch/` is a Connect IQ watch app: today's session on the wrist with set
+logging, a vibrating rest timer and the cardio interval timer. Sets upload to
+the log through the phone. Each person's watch key is in the web app under
+Settings → Garmin watch. See [watch/README.md](watch/README.md) to build and
+install it.
+
 ## Development
 
 ```bash

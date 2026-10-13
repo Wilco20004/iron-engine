@@ -7,6 +7,7 @@ import {
   blockEntries, blockPlan, connectorToken, currentBlock, deleteEntry, ensureBlock, getBlock, getTemplate,
   importEntries, library, listBlocks, listTemplates, putEntry, regenerateConnectorToken, startBlock,
 } from './store';
+import { regenerateWatchKey, watchKey } from './watch';
 
 export const api = Router();
 
@@ -132,6 +133,11 @@ api.post('/log/import', requireProfile, (req, res) => {
   const p = me(res);
   res.json({ imported: importEntries(p.id, ensureBlock(p), entries) });
 });
+
+/* ---------- Garmin watch key ---------- */
+
+api.get('/watch-key', requireProfile, (_req, res) => res.json({ key: watchKey(me(res).id) }));
+api.post('/watch-key/regenerate', requireProfile, (_req, res) => res.json({ key: regenerateWatchKey(me(res).id) }));
 
 /* ---------- connector (MCP) link ---------- */
 

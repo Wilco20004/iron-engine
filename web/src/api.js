@@ -30,5 +30,7 @@ export const api = {
   importLog: entries => req("log/import", send("POST", { entries })),
   startBlock: programId => req("blocks", send("POST", { programId })),
   connector: () => req("connector"),
+  watchKey: () => req("watch-key"),
+  regenerateWatchKey: () => req("watch-key/regenerate", send("POST")),
   regenerateConnector: () => req("connector/regenerate", send("POST")),
 };

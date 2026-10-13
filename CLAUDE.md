@@ -11,6 +11,8 @@ Ships as a Docker image and a Home Assistant add-on (`config.yaml`).
 - `server/src/db.ts`: schema and the version-1 → blocks migration (table rename)
 - `server/src/routes.ts`: the app's REST API (`/api`)
 - `server/src/mcp.ts`: MCP tools at `/mcp/<token>` (stateless streamable HTTP)
+- `server/src/watch.ts`: Garmin watch API at `/watch` (per-person `X-Watch-Key`); keep responses ASCII
+- `watch/`: Connect IQ watch app (Monkey C). Can't be compiled in CI; built with the Garmin SDK
 - `server/programs/*.json`: program templates; `exercises.json`: shared library
 - `web/src/main.js`: the whole UI (ported from a single-page prototype; keep its style)
 - `web/public/exercises/`: photos, `<photo>-0.jpg` start and `-1.jpg` finish
