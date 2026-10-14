@@ -19,9 +19,9 @@ module Theme {
     // Short arc at the screen edge beside the START button (upper right).
     function startHint(dc, color) {
         var w = dc.getWidth();
-        dc.setPenWidth(w * 0.025);
+        dc.setPenWidth(w * 0.012);
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.drawArc(w / 2, dc.getHeight() / 2, w / 2 - w * 0.02, Graphics.ARC_COUNTER_CLOCKWISE, 33, 57);
+        dc.drawArc(w / 2, dc.getHeight() / 2, w / 2 - w * 0.012, Graphics.ARC_COUNTER_CLOCKWISE, 33, 57);
         dc.setPenWidth(1);
     }
 

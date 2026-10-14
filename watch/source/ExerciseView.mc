@@ -61,7 +61,7 @@ class ExerciseView extends WatchUi.View {
 
         Theme.recDot(dc);
         dc.setColor(Theme.MUTED, Graphics.COLOR_TRANSPARENT);
-        fitText(dc, cx, h * 0.17, w * 0.62, shortName(l["name"]));
+        fitText(dc, cx, h * 0.17, w * 0.54, shortName(l["name"]));
 
         if (allDone()) {
             Theme.ring(dc, 1, Theme.GOOD);
