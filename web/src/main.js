@@ -244,6 +244,7 @@ function renderSheet() {
       <input class="sin" id="s-reps-${j}" data-set="${j}" data-f="reps" inputmode="numeric" placeholder="${esc(phReps)}" value="${esc(s.reps)}" aria-label="Set ${j + 1} reps">
       <button type="button" class="fail" data-fail="${j}" aria-pressed="${!!s.fail}" aria-label="Set ${j + 1} went to failure">Fail</button>
       <button type="button" class="tick" data-tick="${j}" aria-pressed="${!!s.done}" aria-label="Set ${j + 1} done">✓</button>
+      ${s.sec || s.hr ? `<span class="set-meta">Watch: ${esc([s.sec && s.sec + " s", s.hr && "peak " + s.hr + " bpm"].filter(Boolean).join(" · "))}</span>` : ""}
     </div>`;
   }).join("");
   sheet.innerHTML = `<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sh-title" tabindex="-1">

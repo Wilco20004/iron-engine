@@ -174,7 +174,7 @@ export function migrateLegacyLog() {
 
 export type Readable = {
   week: string; day: string; item: string; date?: string;
-  sets?: { kg: string; reps: string; fail?: boolean }[]; done?: boolean;
+  sets?: { kg: string; reps: string; fail?: boolean; seconds?: string; peakHr?: string }[]; done?: boolean;
   cardio?: Record<string, unknown>; endedEarly?: Record<string, unknown>; garmin?: Record<string, unknown>;
 };
 
@@ -204,8 +204,11 @@ export function readableLog(plan: Plan, entries: Record<string, Record<string, u
       const { reason, note, exercisesDone, setsDone, cardioDone } = e as Record<string, unknown>;
       r.endedEarly = { reason, note, exercisesDone, setsDone, cardioDone };
     } else {
-      const sets = (e.sets as { kg?: string; reps?: string; done?: boolean; fail?: boolean }[] | undefined) ?? [];
-      r.sets = sets.filter(s => s.done).map(s => ({ kg: s.kg ?? '', reps: s.reps ?? '', ...(s.fail ? { fail: true } : {}) }));
+      const sets = (e.sets as { kg?: string; reps?: string; done?: boolean; fail?: boolean; sec?: string; hr?: string }[] | undefined) ?? [];
+      r.sets = sets.filter(s => s.done).map(s => ({
+        kg: s.kg ?? '', reps: s.reps ?? '', ...(s.fail ? { fail: true } : {}),
+        ...(s.sec ? { seconds: s.sec } : {}), ...(s.hr ? { peakHr: s.hr } : {}),
+      }));
       r.done = !!e.done;
     }
     out.push(r);

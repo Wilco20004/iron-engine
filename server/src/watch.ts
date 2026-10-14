@@ -160,10 +160,11 @@ watch.get('/photo/:file', (req, res) => {
   });
 });
 
-// One finished set: { week, day, lift (index), set (index), kg, reps, fail }.
+// One finished set: { week, day, lift (index), set (index), kg, reps, fail, sec, hr }.
+// sec = how long the set took, hr = peak heart rate during it (both optional).
 watch.post('/set', (req, res) => {
   const p = res.locals.profile as ProfileRow;
-  const { week, day, lift, set, kg, reps, fail } = req.body ?? {};
+  const { week, day, lift, set, kg, reps, fail, sec, hr } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
   const tday = plan.days[day];
@@ -176,7 +177,9 @@ watch.post('/set', (req, res) => {
   const target = setsFor(l, plan.weeks[week]);
   e.sets = (e.sets as Entry[] | undefined) ?? [];
   while (e.sets.length < Math.max(target, set + 1)) e.sets.push({ kg: '', reps: '', done: false });
-  e.sets[set] = { kg: String(kg ?? ''), reps: String(reps ?? ''), done: true, ...(fail ? { fail: true } : {}) };
+  const metric = (v: unknown, max: number) => { const n = int(v); return n !== undefined && !Number.isNaN(n) && n > 0 && n < max ? String(n) : undefined; };
+  const s = metric(sec, 3600), h = metric(hr, 250);
+  e.sets[set] = { kg: String(kg ?? ''), reps: String(reps ?? ''), done: true, ...(fail ? { fail: true } : {}), ...(s ? { sec: s } : {}), ...(h ? { hr: h } : {}) };
   e.done = e.sets.filter((s: Entry) => s.done).length >= target;
   putEntry(p.id, block.id, key, e);
   res.json({ ok: true, done: e.done });

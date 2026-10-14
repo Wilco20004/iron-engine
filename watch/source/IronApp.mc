@@ -138,17 +138,22 @@ class IronApp extends Application.AppBase {
 
     /* ---------- logging ---------- */
 
-    function logSet(liftIndex, kg, reps, fail) {
+    // sec: how long the set took; hr: peak heart rate during it (0 when there was no reading).
+    function logSet(liftIndex, kg, reps, fail, sec, hr) {
         var lift = session["lifts"][liftIndex];
         var logged = lift["logged"];
         var setIndex = logged.size();
         logged.add({"kg" => kg, "reps" => reps, "fail" => fail});
         lift["kg"] = kg;
         Application.Storage.setValue("session", session);
-        enqueue("/watch/set", {
+        var body = {
             "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
-            "set" => setIndex, "kg" => kg, "reps" => reps, "fail" => fail
-        });
+            "set" => setIndex, "kg" => kg, "reps" => reps, "fail" => fail, "sec" => sec
+        };
+        if (hr > 0) {
+            body["hr"] = hr;
+        }
+        enqueue("/watch/set", body);
         refreshMenu();
     }
 

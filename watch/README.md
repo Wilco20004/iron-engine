@@ -72,7 +72,7 @@ own person's training.
 | Method | Path | Body / query |
 |---|---|---|
 | GET | `/watch/session` | optional `?week=&day=` (indexes); default is the next unfinished session |
-| POST | `/watch/set` | `{ week, day, lift, set, kg, reps, fail }` (indexes into the session) |
+| POST | `/watch/set` | `{ week, day, lift, set, kg, reps, fail, sec, hr }` (indexes into the session; `sec` = set duration, `hr` = peak heart rate) |
 | POST | `/watch/cardio` | `{ week, day, min }` |
 | POST | `/watch/workout` | `{ week, day, min, avgHr, maxHr, kcal }`, stored as the session's `-watch` log entry |
 | GET | `/watch/photo/<photo>-<0\|1>.jpg` | start / finish photo of an exercise |

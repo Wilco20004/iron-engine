@@ -17,6 +17,8 @@ class ExerciseView extends WatchUi.View {
     hidden var restTotal = 0;
     hidden var warned = false;
     hidden var timer;
+    hidden var setStart = 0;   // when the current set began (exercise opened or rest ended)
+    hidden var peakHr = 0;     // highest heart rate seen during the current set
 
     function initialize(index) {
         View.initialize();
@@ -24,7 +26,22 @@ class ExerciseView extends WatchUi.View {
         var l = lift();
         kg = l["kg"] == null ? "" : l["kg"];
         reps = l["repT"].toString();
+        beginSet();
+        // One tick a second: counts the rest down, or samples heart rate during a set.
         timer = new Timer.Timer();
+        timer.start(method(:onTick), 1000, true);
+    }
+
+    function beginSet() {
+        setStart = System.getTimer();
+        peakHr = 0;
+    }
+
+    function sampleHr() {
+        var hr = getApp().workout.heartRate();
+        if (hr != null && hr > peakHr) {
+            peakHr = hr;
+        }
     }
 
     function lift() {
@@ -121,7 +138,8 @@ class ExerciseView extends WatchUi.View {
             WatchUi.popView(WatchUi.SLIDE_RIGHT);
             return;
         }
-        getApp().logSet(li, kg, reps, fail);
+        sampleHr();
+        getApp().logSet(li, kg, reps, fail, (System.getTimer() - setStart) / 1000, peakHr);
         fail = false;
         if (allDone()) {
             buzz(2);
@@ -157,11 +175,14 @@ class ExerciseView extends WatchUi.View {
         warned = false;
         restTotal = secs;
         restEnd = System.getTimer() + secs * 1000;
-        timer.start(method(:onTick), 1000, true);
         WatchUi.requestUpdate();
     }
 
     function onTick() as Void {
+        if (!resting) {
+            sampleHr();
+            return;
+        }
         var left = remaining();
         if (!warned && left <= 10 && left > 0) {
             warned = true;
@@ -176,7 +197,7 @@ class ExerciseView extends WatchUi.View {
 
     function endRest() {
         resting = false;
-        timer.stop();
+        beginSet();
         WatchUi.requestUpdate();
     }
 

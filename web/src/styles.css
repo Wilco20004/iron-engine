@@ -181,6 +181,7 @@ details.howto[open] summary { margin-bottom: 8px; }
 .import div { display: flex; gap: 8px; }
 .set.is-done { background: var(--engine-soft); border-color: transparent; }
 .set-n { font: 700 1.2rem var(--f-display); color: var(--muted); text-align: center; }
+.set-meta { grid-column: 2 / -1; margin-top: -2px; font: 500 .8rem var(--f-data); color: var(--muted); }
 .set label { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .set label span { font: 600 .75rem var(--f-display); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .sin { width: 100%; min-width: 0; font: 500 1.1rem var(--f-data); padding: 9px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
