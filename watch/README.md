@@ -57,6 +57,12 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
   - Back: return to the menu.
 - **Cardio**: tap to start/pause, swipe up to skip a part. Each phase change
   buzzes (double buzz when a hard interval starts). Minutes are saved at the end.
+- **Garmin activity**: opening the first exercise starts recording a strength
+  training activity (red dot at the top); each exercise and the cardio get a
+  lap, and the rest and cardio screens show live heart rate. "Finish workout"
+  (or Back from the menu) saves it to Garmin Connect or discards it; leaving
+  the app another way saves it. The duration, heart rate and calories are sent
+  to the server and shown on that session in the web app.
 
 ## Server API
 
@@ -68,3 +74,5 @@ own person's training.
 | GET | `/watch/session` | optional `?week=&day=` (indexes); default is the next unfinished session |
 | POST | `/watch/set` | `{ week, day, lift, set, kg, reps, fail }` (indexes into the session) |
 | POST | `/watch/cardio` | `{ week, day, min }` |
+| POST | `/watch/workout` | `{ week, day, min, avgHr, maxHr, kcal }`, stored as the session's `-watch` log entry |
+| GET | `/watch/photo/<photo>-<0\|1>.jpg` | start / finish photo of an exercise |

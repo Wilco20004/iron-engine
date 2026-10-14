@@ -11,6 +11,7 @@ class IronApp extends Application.AppBase {
     var queue = [];       // pending uploads: {"path" => "/watch/set", "body" => {...}}
     var menu = null;      // the session menu, so other screens can refresh its labels
     var status = "";      // last sync problem, shown in the menu
+    var workout = new Workout();
     hidden var _busy = false;
     hidden var _loading = false;
 
@@ -29,7 +30,25 @@ class IronApp extends Application.AppBase {
         }
     }
 
+    // Leaving the app some other way than "Finish workout" keeps the activity:
+    // it's saved, and its summary uploads next time the app opens.
     function onStop(state) {
+        if (workout.active()) {
+            finishWorkout(true);
+        }
+    }
+
+    function finishWorkout(keep) {
+        if (!keep) {
+            workout.discard();
+            return;
+        }
+        var summary = workout.save();
+        if (summary != null && session != null) {
+            summary["week"] = session["week"];
+            summary["day"] = session["day"];
+            enqueue("/watch/workout", summary);
+        }
     }
 
     function getInitialView() {

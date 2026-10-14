@@ -28,36 +28,34 @@ class CardioView extends WatchUi.View {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var cx = w / 2;
-        var c = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
+        Theme.clear(dc);
 
         if (finished) {
-            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.40, Graphics.FONT_MEDIUM, "Cardio done", c);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.55, Graphics.FONT_SMALL, clock(activeMs / 1000) + " total", c);
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.70, Graphics.FONT_XTINY, "Saved. Tap to go back", c);
+            Theme.ring(dc, 1, Theme.GOOD);
+            Theme.text(dc, cx, h * 0.36, Graphics.FONT_SMALL, Theme.MUTED, "Cardio done");
+            Theme.text(dc, cx, h * 0.52, Graphics.FONT_NUMBER_MEDIUM, Theme.GOOD, clock(activeMs / 1000));
+            Theme.text(dc, cx, h * 0.70, Graphics.FONT_SMALL, Theme.MUTED, "Saved. Tap to go back");
             return;
         }
 
         var p = phases[idx];
-        dc.setColor(kindColor(p[2]), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.24, Graphics.FONT_MEDIUM, p[0].toUpper(), c);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.47, Graphics.FONT_NUMBER_THAI_HOT, clock(remaining()), c);
+        var color = kindColor(p[2]);
+        var phaseSecs = p[1];
+        Theme.ring(dc, phaseSecs > 0 ? 1.0 - remaining().toFloat() / phaseSecs : 0, color);
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        fitText(dc, cx, h * 0.24, w * 0.6, p[0].toUpper());
+        Theme.text(dc, cx, h * 0.47, Graphics.FONT_NUMBER_THAI_HOT, Theme.TEXT, clock(remaining()));
+
+        Theme.heartRate(dc, cx, h * 0.67);
         var rounds = countHard(phases.size());
         if (rounds > 0 && (p[2].equals("hard") || p[2].equals("easy"))) {
-            dc.drawText(cx, h * 0.68, Graphics.FONT_SMALL, "Round " + countHard(idx + 1) + "/" + rounds, c);
+            Theme.dots(dc, cx, h * 0.76, rounds, countHard(idx + 1) - 1, Theme.HARD);
         }
         if (!running) {
-            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.80, Graphics.FONT_SMALL, "Tap to start", c);
+            Theme.text(dc, cx, h * 0.85, Graphics.FONT_SMALL, Theme.ACCENT, "Tap to start");
         } else if (idx + 1 < phases.size()) {
-            dc.drawText(cx, h * 0.80, Graphics.FONT_SMALL, "Next: " + phases[idx + 1][0], c);
+            Theme.text(dc, cx, h * 0.85, Graphics.FONT_SMALL, Theme.MUTED, "Next  " + phases[idx + 1][0]);
         }
     }
 
@@ -150,12 +148,12 @@ class CardioView extends WatchUi.View {
 
 function kindColor(kind) {
     if (kind.equals("hard")) {
-        return Graphics.COLOR_RED;
+        return Theme.HARD;
     }
     if (kind.equals("warm") || kind.equals("cool")) {
-        return Graphics.COLOR_ORANGE;
+        return Theme.ACCENT;
     }
-    return Graphics.COLOR_GREEN;
+    return Theme.GOOD;
 }
 
 class CardioDelegate extends WatchUi.BehaviorDelegate {

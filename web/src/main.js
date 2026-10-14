@@ -122,6 +122,7 @@ function renderSession() {
       </div>
       <p class="week-note">${wk.note}</p>
       ${endBanner()}
+      ${garminLine()}
       <p class="week-note">Tap an exercise to see how it's done and log the kg and reps for each set. Unsure of a word? See <a href="#glossary" style="color:var(--iron)">gym words</a> below.</p>
     </div>
     <div class="block">
@@ -517,6 +518,17 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 /* ---------- end session early ---------- */
 const REASONS = ["Muscles too tired", "Out of time", "Pain or injury", "Felt unwell", "Equipment busy", "Other"];
 let endReturn = null, endDraft = { reason: "", note: "" };
+// The Garmin activity the watch recorded for this session ("-watch" key).
+function garminLine() {
+  const e = log[state.week + "-" + state.day + "-watch"];
+  if (!e) return "";
+  const bits = [];
+  if (e.min) bits.push(e.min + " min");
+  if (e.avgHr) bits.push("avg " + e.avgHr + " bpm");
+  if (e.maxHr) bits.push("max " + e.maxHr + " bpm");
+  if (e.kcal) bits.push(e.kcal + " kcal");
+  return bits.length ? `<p class="week-note"><b>Garmin:</b> ${esc(bits.join(" · "))}</p>` : "";
+}
 const endKey = () => key(state.week, state.day, "end");
 const endEntry = () => log[endKey()];
 function endBanner() {
@@ -583,7 +595,7 @@ function addMeta(k, e) {
   if (!day || !wk || day.rest) return;
   if (!e.week) e.week = wk.name;
   if (!e.day) e.day = day.d + " " + day.title;
-  if (!e.item) e.item = item === "end" ? "Ended session early" : item === "cardio" ? "Cardio: " + cardioFor(day, wk).kind : day.lifts.find(l => slug(l[0]) === item)?.[0] || item;
+  if (!e.item) e.item = item === "end" ? "Ended session early" : item === "watch" ? "Garmin activity" : item === "cardio" ? "Cardio: " + cardioFor(day, wk).kind : day.lifts.find(l => slug(l[0]) === item)?.[0] || item;
   if (!e.date) e.date = new Date().toISOString().slice(0, 10);
 }
 function setStatus(s, msg) {

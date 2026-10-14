@@ -28,11 +28,9 @@ class InfoView extends WatchUi.View {
     function onUpdate(dc) {
         var w = dc.getWidth();
         var h = dc.getHeight();
-        var c = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
+        Theme.clear(dc);
 
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Theme.ACCENT, Graphics.COLOR_TRANSPARENT);
         fitText(dc, w / 2, h * 0.16, w * 0.6, titles[page]);
 
         var area = new WatchUi.TextArea({
@@ -47,8 +45,7 @@ class InfoView extends WatchUi.View {
         });
         area.draw(dc);
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.87, Graphics.FONT_XTINY, (page + 1) + " / " + pages.size(), c);
+        Theme.dots(dc, w / 2, h * 0.87, pages.size(), page, Theme.ACCENT);
     }
 
     function turn(delta) {
@@ -117,7 +114,7 @@ class PhotoView extends WatchUi.View {
         Communications.makeImageRequest(
             app.baseUrl() + "/watch/photo/" + photo + "-" + which + ".jpg",
             {"key" => app.watchKey()},
-            {:maxWidth => size.toNumber(), :maxHeight => size.toNumber(), :dithering => Communications.IMAGE_DITHERING_FLOYD_STEINBERG},
+            {:maxWidth => size.toNumber(), :maxHeight => size.toNumber()},
             which == 0 ? method(:onStartImage) : method(:onFinishImage)
         );
     }
@@ -142,23 +139,18 @@ class PhotoView extends WatchUi.View {
     function onUpdate(dc) {
         var w = dc.getWidth();
         var h = dc.getHeight();
-        var c = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
+        Theme.clear(dc);
 
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.11, Graphics.FONT_SMALL, which == 0 ? "Start" : "Finish", c);
+        Theme.text(dc, w / 2, h * 0.11, Graphics.FONT_SMALL, Theme.ACCENT, which == 0 ? "Start" : "Finish");
 
         var img = images[which];
         if (img != null) {
             dc.drawBitmap((w - img.getWidth()) / 2, (h - img.getHeight()) / 2 + h * 0.02, img);
         } else {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(w / 2, h / 2, Graphics.FONT_SMALL, failed[which] ? "No photo" : "Loading...", c);
+            Theme.text(dc, w / 2, h / 2, Graphics.FONT_SMALL, Theme.MUTED, failed[which] ? "No photo" : "Loading...");
         }
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.9, Graphics.FONT_XTINY, "Tap: " + (which == 0 ? "finish" : "start"), c);
+        Theme.dots(dc, w / 2, h * 0.9, 2, which, Theme.ACCENT);
     }
 
     function swap() {

@@ -80,7 +80,7 @@ export const PlanSchema = z.object({
       const seen = new Set<string>();
       day.lifts.forEach((l, li) => {
         const s = slug(l.name);
-        if (s === 'cardio' || s === 'end') ctx.addIssue({ code: 'custom', path: ['days', di, 'lifts', li, 'name'], message: `"${l.name}" is a reserved name` });
+        if (s === 'cardio' || s === 'end' || s === 'watch') ctx.addIssue({ code: 'custom', path: ['days', di, 'lifts', li, 'name'], message: `"${l.name}" is a reserved name` });
         if (seen.has(s)) ctx.addIssue({ code: 'custom', path: ['days', di, 'lifts', li, 'name'], message: `"${l.name}" appears twice on ${day.d}` });
         seen.add(s);
       });
@@ -90,7 +90,8 @@ export const PlanSchema = z.object({
 
 export type Plan = z.infer<typeof PlanSchema>;
 
-// Log keys are "<week>-<day>-<exercise slug>", plus "-cardio" and "-end", so
+// Log keys are "<week>-<day>-<exercise slug>", plus "-cardio", "-end" and
+// "-watch" (the Garmin activity's heart rate and calories), so
 // reordering or swapping exercises never mixes up logged history.
 export function slug(name: string): string {
   return name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'x';

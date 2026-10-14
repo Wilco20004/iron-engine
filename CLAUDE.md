@@ -19,7 +19,7 @@ Ships as a Docker image and a Home Assistant add-on (`config.yaml`).
 
 ## Rules that are easy to break
 
-- Log keys are `<week>-<day>-<slug(exercise name)>`, `-cardio`, `-end`. `slug()` exists in
+- Log keys are `<week>-<day>-<slug(exercise name)>`, `-cardio`, `-end`, `-watch` (Garmin activity summary). `slug()` exists in
   both `server/src/plan.ts` and `web/src/main.js` and must stay identical.
 - A block stores its own copy of the plan. Never edit an ended block's plan.
 - Template files are re-seeded on start-up only while not customized through the connector.

@@ -14,6 +14,7 @@ class ExerciseView extends WatchUi.View {
     var fail = false;
     var resting = false;
     hidden var restEnd = 0;
+    hidden var restTotal = 0;
     hidden var warned = false;
     hidden var timer;
 
@@ -42,68 +43,61 @@ class ExerciseView extends WatchUi.View {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var cx = w / 2;
-        var c = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
         var l = lift();
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        fitText(dc, cx, h * 0.17, w * 0.62, shortName(l["name"]));
+        Theme.clear(dc);
 
         if (resting) {
-            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.30, Graphics.FONT_MEDIUM, "REST", c);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.52, Graphics.FONT_NUMBER_THAI_HOT, clock(remaining()), c);
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.76, Graphics.FONT_SMALL, "Next: set " + (nextSet() + 1) + "/" + l["sets"], c);
-            dc.drawText(cx, h * 0.86, Graphics.FONT_TINY, "START: skip", c);
+            var left = remaining();
+            var color = left <= 10 ? Theme.ACCENT : Theme.GOOD;
+            Theme.ring(dc, restTotal > 0 ? left.toFloat() / restTotal : 0, color);
+            Theme.startHint(dc, Theme.TEXT);
+            Theme.text(dc, cx, h * 0.24, Graphics.FONT_SMALL, color, "REST");
+            Theme.text(dc, cx, h * 0.47, Graphics.FONT_NUMBER_THAI_HOT, Theme.TEXT, clock(left));
+            Theme.heartRate(dc, cx, h * 0.69);
+            Theme.text(dc, cx, h * 0.78, Graphics.FONT_SMALL, Theme.MUTED, "Next  " + (kg.length() > 0 ? kg + " x " : "x ") + reps);
+            Theme.dots(dc, cx, h * 0.87, l["sets"], nextSet(), Theme.ACCENT);
             return;
         }
+
+        Theme.recDot(dc);
+        dc.setColor(Theme.MUTED, Graphics.COLOR_TRANSPARENT);
+        fitText(dc, cx, h * 0.17, w * 0.62, shortName(l["name"]));
 
         if (allDone()) {
-            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.45, Graphics.FONT_MEDIUM, "All sets done", c);
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 0.62, Graphics.FONT_XTINY, "Tap to go back", c);
+            Theme.ring(dc, 1, Theme.GOOD);
+            Theme.text(dc, cx, h * 0.45, Graphics.FONT_LARGE, Theme.GOOD, "Done");
+            Theme.dots(dc, cx, h * 0.58, l["sets"], l["sets"], Theme.GOOD);
+            Theme.text(dc, cx, h * 0.72, Graphics.FONT_SMALL, Theme.MUTED, "Tap to go back");
             return;
         }
 
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.29, Graphics.FONT_MEDIUM, "Set " + (nextSet() + 1) + " of " + l["sets"], c);
+        Theme.dots(dc, cx, h * 0.28, l["sets"], nextSet(), Theme.ACCENT);
 
         // Number fonts only have digits, so an empty weight shows as 0 (it is still logged empty).
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.46, Graphics.FONT_NUMBER_HOT, kg.length() > 0 ? kg : "0", c);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.60, Graphics.FONT_TINY, l["load"], c);
+        Theme.text(dc, cx, h * 0.45, Graphics.FONT_NUMBER_HOT, Theme.TEXT, kg.length() > 0 ? kg : "0");
+        Theme.text(dc, cx, h * 0.59, Graphics.FONT_TINY, Theme.MUTED, l["load"]);
+        Theme.text(dc, cx, h * 0.71, Graphics.FONT_LARGE, fail ? Theme.HARD : Theme.TEXT, "x " + reps + (fail ? " F" : ""));
+        Theme.text(dc, cx, h * 0.83, Graphics.FONT_SMALL, Theme.ACCENT, "Target " + l["reps"]);
 
-        dc.setColor(fail ? Graphics.COLOR_RED : Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.72, Graphics.FONT_LARGE, "x " + reps + (fail ? " F" : ""), c);
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.84, Graphics.FONT_SMALL, "Target " + l["reps"], c);
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 0.92, Graphics.FONT_XTINY, "START: done", c);
+        Theme.startHint(dc, Theme.GOOD);
 
         // Side buttons: how-to on the left, photos on the right.
-        var r = w * 0.075;
-        dc.setPenWidth(2);
+        var r = w * 0.07;
         if (hasInfo()) {
-            dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawCircle(w * 0.11, h * 0.46, r);
-            dc.drawText(w * 0.11, h * 0.46, Graphics.FONT_SMALL, "i", c);
+            Theme.button(dc, w * 0.11, h * 0.45, r, "i", Theme.INFO);
         }
         if (hasPhoto()) {
             var px = w * 0.89;
-            var py = h * 0.46;
-            dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawCircle(px, py, r);
+            var py = h * 0.45;
+            dc.setColor(Theme.TRACK, Graphics.COLOR_TRANSPARENT);
+            dc.fillCircle(px, py, r);
+            dc.setColor(Theme.INFO, Graphics.COLOR_TRANSPARENT);
+            dc.setPenWidth(2);
             dc.drawRectangle(px - r * 0.55, py - r * 0.4, r * 1.1, r * 0.8);
+            dc.setPenWidth(1);
             dc.fillPolygon([[px - r * 0.45, py + r * 0.3], [px - r * 0.1, py - r * 0.15], [px + r * 0.2, py + r * 0.3]]);
             dc.fillCircle(px + r * 0.25, py - r * 0.15, r * 0.12);
         }
-        dc.setPenWidth(1);
     }
 
     function hasInfo() {
@@ -141,6 +135,7 @@ class ExerciseView extends WatchUi.View {
         if (resting) {
             if (delta > 0) {
                 restEnd += 15000;
+                restTotal += 15;
                 WatchUi.requestUpdate();
             }
             return;
@@ -160,6 +155,7 @@ class ExerciseView extends WatchUi.View {
     function startRest(secs) {
         resting = true;
         warned = false;
+        restTotal = secs;
         restEnd = System.getTimer() + secs * 1000;
         timer.start(method(:onTick), 1000, true);
         WatchUi.requestUpdate();

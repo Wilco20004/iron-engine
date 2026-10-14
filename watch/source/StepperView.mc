@@ -25,26 +25,22 @@ class StepperView extends WatchUi.View {
     function onUpdate(dc) {
         var w = dc.getWidth();
         var h = dc.getHeight();
-        var c = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
+        Theme.clear(dc);
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.13, Graphics.FONT_SMALL, label, c);
+        Theme.text(dc, w / 2, h * 0.12, Graphics.FONT_SMALL, Theme.MUTED, label);
 
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+        var r = w * 0.105;
         if (big != null) {
-            dc.drawText(w * 0.28, h * 0.30, Graphics.FONT_MEDIUM, "-" + formatNumber(big), c);
-            dc.drawText(w * 0.72, h * 0.30, Graphics.FONT_MEDIUM, "+" + formatNumber(big), c);
+            Theme.button(dc, w * 0.30, h * 0.28, r, "-" + formatNumber(big), Theme.ACCENT);
+            Theme.button(dc, w * 0.70, h * 0.28, r, "+" + formatNumber(big), Theme.ACCENT);
         }
-        dc.drawText(w * 0.28, h * 0.72, Graphics.FONT_MEDIUM, "-" + formatNumber(small), c);
-        dc.drawText(w * 0.72, h * 0.72, Graphics.FONT_MEDIUM, "+" + formatNumber(small), c);
+        Theme.button(dc, w * 0.30, h * 0.72, r, "-" + formatNumber(small), Theme.ACCENT);
+        Theme.button(dc, w * 0.70, h * 0.72, r, "+" + formatNumber(small), Theme.ACCENT);
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.50, Graphics.FONT_NUMBER_HOT, formatNumber(value), c);
+        Theme.text(dc, w / 2, h * 0.50, Graphics.FONT_NUMBER_HOT, Theme.TEXT, formatNumber(value));
 
-        dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, h * 0.88, Graphics.FONT_SMALL, "Save", c);
+        Theme.text(dc, w / 2, h * 0.90, Graphics.FONT_SMALL, Theme.GOOD, "Save");
+        Theme.startHint(dc, Theme.GOOD);
     }
 
     function adjust(delta) {

@@ -197,3 +197,21 @@ watch.post('/cardio', (req, res) => {
   putEntry(p.id, block.id, key, e);
   res.json({ ok: true });
 });
+
+// The Garmin activity the watch recorded for a session: { week, day, min, avgHr, maxHr, kcal }.
+watch.post('/workout', (req, res) => {
+  const p = res.locals.profile as ProfileRow;
+  const { week, day } = req.body ?? {};
+  const block = ensureBlock(p);
+  const plan = blockPlan(block);
+  const tday = plan.days[day];
+  if (!plan.weeks[week] || !tday || !isTraining(tday)) return res.status(400).json({ error: 'No such session in your current plan' });
+  const key = `${week}-${day}-watch`;
+  const e: Entry = (blockEntries(p.id, block.id) as Record<string, Entry>)[key] ?? meta(plan, week, day, 'Garmin activity');
+  for (const f of ['min', 'avgHr', 'maxHr', 'kcal'] as const) {
+    const v = int(req.body[f]);
+    if (v !== undefined && !Number.isNaN(v) && v >= 0 && v < 10000) e[f] = String(v);
+  }
+  putEntry(p.id, block.id, key, e);
+  res.json({ ok: true });
+});

@@ -175,7 +175,7 @@ export function migrateLegacyLog() {
 export type Readable = {
   week: string; day: string; item: string; date?: string;
   sets?: { kg: string; reps: string; fail?: boolean }[]; done?: boolean;
-  cardio?: Record<string, unknown>; endedEarly?: Record<string, unknown>;
+  cardio?: Record<string, unknown>; endedEarly?: Record<string, unknown>; garmin?: Record<string, unknown>;
 };
 
 export function readableLog(plan: Plan, entries: Record<string, Record<string, unknown>>): Readable[] {
@@ -189,11 +189,15 @@ export function readableLog(plan: Plan, entries: Record<string, Record<string, u
     const r: Readable & { order: number[] } = {
       week: week?.name ?? `Week ${k.week + 1}`,
       day: day ? `${day.d} ${day.title}` : `Day ${k.day + 1}`,
-      item: k.item === 'cardio' ? 'Cardio' : k.item === 'end' ? 'Ended early' : (liftIndex >= 0 && 'lifts' in day ? day.lifts[liftIndex].name : String(e.item ?? k.item)),
-      order: [k.week, k.day, k.item === 'end' ? 99 : k.item === 'cardio' ? 98 : liftIndex < 0 ? 97 : liftIndex],
+      item: k.item === 'cardio' ? 'Cardio' : k.item === 'end' ? 'Ended early' : k.item === 'watch' ? 'Garmin activity'
+        : (liftIndex >= 0 && 'lifts' in day ? day.lifts[liftIndex].name : String(e.item ?? k.item)),
+      order: [k.week, k.day, k.item === 'watch' ? 100 : k.item === 'end' ? 99 : k.item === 'cardio' ? 98 : liftIndex < 0 ? 97 : liftIndex],
     };
     if (e.date) r.date = String(e.date);
-    if (k.item === 'cardio') {
+    if (k.item === 'watch') {
+      const { min, avgHr, maxHr, kcal } = e as Record<string, unknown>;
+      r.garmin = Object.fromEntries(Object.entries({ min, avgHr, maxHr, kcal }).filter(([, v]) => v !== undefined && v !== ''));
+    } else if (k.item === 'cardio') {
       const { min, km, hr, rpe, notes, done } = e as Record<string, unknown>;
       r.cardio = Object.fromEntries(Object.entries({ min, km, avgHr: hr, effort: rpe, notes, done }).filter(([, v]) => v !== undefined && v !== ''));
     } else if (k.item === 'end') {
@@ -218,7 +222,7 @@ export function progress(profileId: string, exercise?: string) {
     const plan = blockPlan(b);
     for (const [key, e] of Object.entries(blockEntries(profileId, b.id))) {
       const k = parseKey(key);
-      if (!k || k.item === 'cardio' || k.item === 'end' || (want && k.item !== want)) continue;
+      if (!k || k.item === 'cardio' || k.item === 'end' || k.item === 'watch' || (want && k.item !== want)) continue;
       const sets = ((e.sets as { kg?: string; reps?: string; done?: boolean; fail?: boolean }[]) ?? []).filter(s => s.done);
       if (!sets.length) continue;
       const day = plan.days[k.day];
