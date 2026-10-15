@@ -19,6 +19,8 @@ class ExerciseView extends WatchUi.View {
     hidden var timer;
     hidden var setStart = 0;   // when the current set began (exercise opened or rest ended)
     hidden var peakHr = 0;     // highest heart rate seen during the current set
+    hidden var flash = "";     // "+15 s" after a swipe changed the rest
+    hidden var flashUntil = 0;
 
     function initialize(index) {
         View.initialize();
@@ -68,11 +70,15 @@ class ExerciseView extends WatchUi.View {
             var color = left <= 10 ? Theme.ACCENT : Theme.GOOD;
             Theme.ring(dc, restTotal > 0 ? left.toFloat() / restTotal : 0, color);
             Theme.startHint(dc, Theme.TEXT);
-            Theme.text(dc, cx, h * 0.24, Graphics.FONT_SMALL, color, "REST");
-            Theme.text(dc, cx, h * 0.47, Graphics.FONT_NUMBER_THAI_HOT, Theme.TEXT, clock(left));
-            Theme.heartRate(dc, cx, h * 0.69);
-            Theme.text(dc, cx, h * 0.78, Graphics.FONT_SMALL, Theme.MUTED, "Next  " + (kg.length() > 0 ? kg + " x " : "x ") + reps);
-            Theme.dots(dc, cx, h * 0.87, l["sets"], nextSet(), Theme.ACCENT);
+            // A swipe that changed the rest shows "+15 s" / "-15 s" here for a moment.
+            var label = System.getTimer() < flashUntil ? flash : "REST";
+            Theme.text(dc, cx, h * 0.20, Graphics.FONT_SMALL, color, label);
+            Theme.text(dc, cx, h * 0.38, Graphics.FONT_NUMBER_HOT, Theme.TEXT, clock(left));
+            Theme.heartRate(dc, cx, h * 0.54);
+            // Both lines open an editor when tapped: fix the set just done, or plan the next.
+            Theme.text(dc, cx, h * 0.665, Graphics.FONT_SMALL, Theme.MUTED, "Last  " + setLabel(lastSet()));
+            Theme.text(dc, cx, h * 0.775, Graphics.FONT_SMALL, Theme.TEXT, "Next  " + setLabel({"kg" => kg, "reps" => reps, "fail" => fail}));
+            Theme.dots(dc, cx, h * 0.88, l["sets"], nextSet(), Theme.ACCENT);
             return;
         }
 
@@ -82,16 +88,21 @@ class ExerciseView extends WatchUi.View {
 
         if (allDone()) {
             Theme.ring(dc, 1, Theme.GOOD);
-            Theme.text(dc, cx, h * 0.45, Graphics.FONT_LARGE, Theme.GOOD, "Done");
-            Theme.dots(dc, cx, h * 0.58, l["sets"], l["sets"], Theme.GOOD);
-            Theme.text(dc, cx, h * 0.72, Graphics.FONT_SMALL, Theme.MUTED, "Tap to go back");
+            Theme.text(dc, cx, h * 0.40, Graphics.FONT_LARGE, Theme.GOOD, "Done");
+            Theme.dots(dc, cx, h * 0.53, l["sets"], l["sets"], Theme.GOOD);
+            Theme.text(dc, cx, h * 0.665, Graphics.FONT_SMALL, Theme.MUTED, "Last  " + setLabel(lastSet()));
+            Theme.text(dc, cx, h * 0.80, Graphics.FONT_XTINY, Theme.MUTED, "Tap to go back");
             return;
         }
 
         Theme.dots(dc, cx, h * 0.28, l["sets"], nextSet(), Theme.ACCENT);
 
-        // Number fonts only have digits, so an empty weight shows as 0 (it is still logged empty).
-        Theme.text(dc, cx, h * 0.45, Graphics.FONT_NUMBER_HOT, Theme.TEXT, kg.length() > 0 ? kg : "0");
+        // No weight yet (or a bodyweight exercise): show "--" until one is entered.
+        if (kg.length() > 0) {
+            Theme.text(dc, cx, h * 0.45, Graphics.FONT_NUMBER_HOT, Theme.TEXT, kg);
+        } else {
+            Theme.text(dc, cx, h * 0.45, Graphics.FONT_LARGE, Theme.MUTED, "--");
+        }
         Theme.text(dc, cx, h * 0.59, Graphics.FONT_TINY, Theme.MUTED, l["load"]);
         Theme.text(dc, cx, h * 0.71, Graphics.FONT_LARGE, fail ? Theme.HARD : Theme.TEXT, "x " + reps + (fail ? " F" : ""));
         Theme.text(dc, cx, h * 0.83, Graphics.FONT_SMALL, Theme.ACCENT, "Target " + l["reps"]);
@@ -115,6 +126,25 @@ class ExerciseView extends WatchUi.View {
             dc.fillPolygon([[px - r * 0.45, py + r * 0.3], [px - r * 0.1, py - r * 0.15], [px + r * 0.2, py + r * 0.3]]);
             dc.fillCircle(px + r * 0.25, py - r * 0.15, r * 0.12);
         }
+    }
+
+    function lastSet() {
+        var logged = lift()["logged"];
+        return logged.size() > 0 ? logged[logged.size() - 1] : null;
+    }
+
+    // "40 x 8", "x 12" (no weight), "40 x 6 F" (to failure)
+    function setLabel(s) {
+        if (s == null) {
+            return "-";
+        }
+        var k = s["kg"] == null ? "" : s["kg"].toString();
+        return (k.length() > 0 ? k + " x " : "x ") + s["reps"] + (s["fail"] == true ? " F" : "");
+    }
+
+    // Called by the edit menu and keypad after the next set's values change.
+    function changed() {
+        WatchUi.requestUpdate();
     }
 
     function hasInfo() {
@@ -149,15 +179,25 @@ class ExerciseView extends WatchUi.View {
         startRest(lift()["rest"]);
     }
 
-    function changeReps(delta) {
-        if (resting) {
-            if (delta > 0) {
-                restEnd += 15000;
-                restTotal += 15;
-                WatchUi.requestUpdate();
-            }
-            return;
+    // While resting: +15 s or -15 s (so an accidental swipe can be undone), never
+    // below 5 s left; only START ends the rest early.
+    function changeRest(delta) {
+        var now = System.getTimer();
+        var end = restEnd + delta * 1000;
+        if (end < now + 5000) {
+            end = now + 5000;
         }
+        restTotal += (end - restEnd) / 1000;
+        restEnd = end;
+        if (remaining() > 10) {
+            warned = false;
+        }
+        flash = (delta > 0 ? "+" : "-") + delta.abs() + " s";
+        flashUntil = now + 1500;
+        WatchUi.requestUpdate();
+    }
+
+    function changeReps(delta) {
         var r = reps.toNumber();
         if (r == null) {
             r = 0;
@@ -235,18 +275,30 @@ class ExerciseDelegate extends WatchUi.BehaviorDelegate {
 
     // Taps only ever edit, so a stray touch can't log a set or skip the rest;
     // START does both. Tap the weight or reps to change it, anywhere else for the menu.
+    // While resting, "Last" fixes the set just done and "Next" edits the coming one;
+    // the rest of the screen ignores taps.
     function onTap(evt) {
-        if (view.resting) {
-            return true;
-        }
-        if (view.allDone()) {
-            view.primary();
-            return true;
-        }
         var xy = evt.getCoordinates();
         var s = System.getDeviceSettings();
         var x = xy[0].toFloat() / s.screenWidth;
         var y = xy[1].toFloat() / s.screenHeight;
+        var onLast = y >= 0.61 && y < 0.72 && view.lastSet() != null;
+        if (view.resting) {
+            if (onLast) {
+                fixLast();
+            } else if (y >= 0.72 && y < 0.84) {
+                openEdit();
+            }
+            return true;
+        }
+        if (view.allDone()) {
+            if (onLast) {
+                fixLast();
+            } else {
+                view.primary();
+            }
+            return true;
+        }
         if (y > 0.34 && y < 0.60 && x < 0.22 && view.hasInfo()) {
             var info = new InfoView(view.lift());
             WatchUi.pushView(info, new InfoDelegate(info), WatchUi.SLIDE_LEFT);
@@ -264,20 +316,29 @@ class ExerciseDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onMenu() {
-        if (!view.resting) {
+        if (!view.allDone()) {
             openEdit();
         }
         return true;
     }
 
-    // Swipe up / down button: reps -1 (or +15 s of rest). Swipe down / up button: reps +1.
+    // Swipe up / down button: reps -1, or +15 s of rest.
+    // Swipe down / up button: reps +1, or -15 s of rest (undoes an accidental swipe up).
     function onNextPage() {
-        view.changeReps(view.resting ? 1 : -1);
+        if (view.resting) {
+            view.changeRest(15);
+        } else {
+            view.changeReps(-1);
+        }
         return true;
     }
 
     function onPreviousPage() {
-        view.changeReps(1);
+        if (view.resting) {
+            view.changeRest(-15);
+        } else {
+            view.changeReps(1);
+        }
         return true;
     }
 
@@ -288,8 +349,15 @@ class ExerciseDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function openEdit() {
-        var menu = new EditMenu(view);
+        var menu = new EditMenu(view, "Next set");
         WatchUi.pushView(menu, new EditMenuDelegate(view, menu), WatchUi.SLIDE_UP);
+    }
+
+    function fixLast() {
+        var n = view.nextSet();
+        var set = new LoggedSet(view.li, n - 1);
+        var menu = new EditMenu(set, "Fix set " + n);
+        WatchUi.pushView(menu, new EditMenuDelegate(set, menu), WatchUi.SLIDE_UP);
     }
 }
 

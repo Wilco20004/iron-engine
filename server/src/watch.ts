@@ -110,7 +110,7 @@ function session(p: ProfileRow, week?: number, day?: number) {
         rest: restSecs(l.rest),
         load: loadLabel(l.name),
         kg: suggestKg(p.id, block.number, plan, entries, w!, l.name),
-        logged: ((e?.sets as Entry[] | undefined) ?? []).filter(s => s.done).map(s => ({ kg: s.kg ?? '', reps: s.reps ?? '', fail: !!s.fail })),
+        logged: ((e?.sets as Entry[] | undefined) ?? []).filter(s => s.done).map(s => ({ kg: s.kg ?? '', reps: s.reps ?? '', fail: !!s.fail, sec: Number(s.sec) || 0, hr: Number(s.hr) || 0 })),
         // For the watch's info and photo pages; photos come from /watch/photo/<photo>-<n>.jpg.
         what: ascii(String(info?.what ?? '')).slice(0, 160),
         steps: ((info?.steps ?? []) as string[]).slice(0, 8).map(s => ascii(s).slice(0, 120)),

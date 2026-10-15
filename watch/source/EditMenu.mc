@@ -2,24 +2,30 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Change the weight or reps for the next set, or mark it as taken to failure.
+// Weight, reps and "to failure" of one set. The target is the exercise screen
+// (the next set) or a LoggedSet (fixing one already done); both have kg, reps,
+// fail and changed().
 class EditMenu extends WatchUi.Menu2 {
-    function initialize(view) {
-        Menu2.initialize({:title => "This set"});
-        addItem(new WatchUi.MenuItem("Weight", view.kg.length() > 0 ? view.kg + " kg" : "none", :kg, null));
-        addItem(new WatchUi.MenuItem("Reps", view.reps, :reps, null));
-        addItem(new WatchUi.ToggleMenuItem("To failure", null, :fail, view.fail, null));
+    function initialize(target, title) {
+        Menu2.initialize({:title => title});
+        addItem(new WatchUi.MenuItem("Weight", kgLabel(target.kg), :kg, null));
+        addItem(new WatchUi.MenuItem("Reps", target.reps, :reps, null));
+        addItem(new WatchUi.ToggleMenuItem("To failure", null, :fail, target.fail, null));
     }
 }
 
+function kgLabel(kg) {
+    return kg.length() > 0 ? kg + " kg" : "none";
+}
+
 class EditMenuDelegate extends WatchUi.Menu2InputDelegate {
-    hidden var view;
+    hidden var target;
     hidden var editor;
 
-    function initialize(v, m) {
+    function initialize(t, m) {
         Menu2InputDelegate.initialize();
-        view = v;
-        editor = new SetEditor(v, m);
+        target = t;
+        editor = new SetEditor(t, m);
     }
 
     function onSelect(item) {
@@ -29,48 +35,77 @@ class EditMenuDelegate extends WatchUi.Menu2InputDelegate {
         } else if (id == :reps) {
             editor.editReps();
         } else if (id == :fail) {
-            view.fail = (item as WatchUi.ToggleMenuItem).isEnabled();
+            target.fail = (item as WatchUi.ToggleMenuItem).isEnabled();
+            target.changed();
         }
     }
 }
 
-// Opens the kg or reps stepper for the next set. Used from the edit menu and by
-// tapping the weight or reps on the exercise screen (menu is null then).
+// Opens the keypad for a set's kg or reps. Used from the edit menu and by tapping
+// the weight or reps on the exercise screen (menu is null then).
 class SetEditor {
-    hidden var view;
+    hidden var target;
     hidden var menu;
 
-    function initialize(v, m) {
-        view = v;
+    function initialize(t, m) {
+        target = t;
         menu = m;
     }
 
     function editKg() {
-        var kg = view.kg.toFloat();
-        push(new StepperView("kg", kg == null ? 20.0 : kg, 2.5, 1, method(:onKg)));
+        push(new KeypadView("kg", target.kg, true, method(:onKg)));
     }
 
     function editReps() {
-        var r = view.reps.toNumber();
-        push(new StepperView("reps", r == null ? 8 : r, null, 1, method(:onReps)));
+        push(new KeypadView("reps", target.reps, false, method(:onReps)));
     }
 
     function onKg(value) as Void {
-        view.kg = formatNumber(value);
+        target.kg = value.length() > 0 ? formatNumber(value.toFloat()) : "";
         if (menu != null) {
-            menu.getItem(0).setSubLabel(view.kg + " kg");
+            menu.getItem(0).setSubLabel(kgLabel(target.kg));
         }
+        target.changed();
     }
 
+    // An empty entry keeps the old reps.
     function onReps(value) as Void {
-        view.reps = value.toNumber().toString();
-        if (menu != null) {
-            menu.getItem(1).setSubLabel(view.reps);
+        if (value.length() == 0) {
+            return;
         }
+        target.reps = value.toNumber().toString();
+        if (menu != null) {
+            menu.getItem(1).setSubLabel(target.reps);
+        }
+        target.changed();
     }
 
-    function push(stepper) {
-        WatchUi.pushView(stepper, new StepperDelegate(stepper), WatchUi.SLIDE_UP);
+    function push(pad) {
+        WatchUi.pushView(pad, new KeypadDelegate(pad), WatchUi.SLIDE_UP);
+    }
+}
+
+// A set that's already logged: edits are saved and uploaded again (the server
+// replaces that set, keeping its time and heart rate).
+class LoggedSet {
+    var kg;
+    var reps;
+    var fail;
+    hidden var li;
+    hidden var si;
+
+    function initialize(liftIndex, setIndex) {
+        li = liftIndex;
+        si = setIndex;
+        var s = getApp().session["lifts"][li]["logged"][si];
+        kg = s["kg"] == null ? "" : s["kg"].toString();
+        reps = s["reps"] == null ? "" : s["reps"].toString();
+        fail = s["fail"] == true;
+    }
+
+    function changed() {
+        getApp().fixSet(li, si, kg, reps, fail);
+        WatchUi.requestUpdate();
     }
 }
 

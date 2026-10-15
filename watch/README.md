@@ -47,12 +47,17 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
   - Taps only edit, so a stray touch never logs a set: tap the weight or the
     reps to change it, anywhere else (or hold/menu) for the edit menu, which
     also marks the set as taken to failure.
-  - Changing a value: tap - / + (weight: 2.5 kg top row, 1 kg bottom row) or
-    swipe right / left for +1 / -1. Save or START keeps it; Back cancels.
+  - Changing a value: a keypad laid out like a clock face (0 at the top, 1-9
+    where the hours are, "." and delete at 10 and 11). The first key replaces
+    the old value: reps 8 is one tap, 42.5 kg four. Save or START keeps it;
+    Back cancels.
   - The "i" on the left opens the how-to (one step per page, swipe up for the
     next); the picture on the right opens the start and finish photos (tap to
     switch). Photos come from `/watch/photo/` on the server.
-  - During rest, taps are ignored. START skips the rest; swipe up adds 15 s.
+  - During rest: START skips the rest. Swipe up adds 15 s, swipe down takes
+    15 s off (so an accidental swipe can be undone). Tap **Last** to fix the
+    set you just did (it's uploaded again), **Next** to change the coming set.
+    Other taps are ignored. **Last** is also on the "Done" screen.
   - Swipe up/down: reps -1/+1.
   - Back: return to the menu.
 - **Cardio**: tap to start/pause, swipe up to skip a part. Each phase change

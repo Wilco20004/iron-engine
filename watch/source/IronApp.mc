@@ -143,7 +143,7 @@ class IronApp extends Application.AppBase {
         var lift = session["lifts"][liftIndex];
         var logged = lift["logged"];
         var setIndex = logged.size();
-        logged.add({"kg" => kg, "reps" => reps, "fail" => fail});
+        logged.add({"kg" => kg, "reps" => reps, "fail" => fail, "sec" => sec, "hr" => hr});
         lift["kg"] = kg;
         Application.Storage.setValue("session", session);
         var body = {
@@ -152,6 +152,32 @@ class IronApp extends Application.AppBase {
         };
         if (hr > 0) {
             body["hr"] = hr;
+        }
+        enqueue("/watch/set", body);
+        refreshMenu();
+    }
+
+    // Fix a set that's already logged (from the rest or done screen): the server
+    // replaces it, and its time and heart rate are sent again so they're kept.
+    function fixSet(liftIndex, setIndex, kg, reps, fail) {
+        var lift = session["lifts"][liftIndex];
+        var s = lift["logged"][setIndex];
+        s["kg"] = kg;
+        s["reps"] = reps;
+        s["fail"] = fail;
+        if (setIndex == lift["logged"].size() - 1) {
+            lift["kg"] = kg;
+        }
+        Application.Storage.setValue("session", session);
+        var body = {
+            "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
+            "set" => setIndex, "kg" => kg, "reps" => reps, "fail" => fail
+        };
+        if (s["sec"] != null && s["sec"] > 0) {
+            body["sec"] = s["sec"];
+        }
+        if (s["hr"] != null && s["hr"] > 0) {
+            body["hr"] = s["hr"];
         }
         enqueue("/watch/set", body);
         refreshMenu();
