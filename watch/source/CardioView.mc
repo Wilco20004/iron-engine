@@ -41,6 +41,7 @@ class CardioView extends WatchUi.View {
         var p = phases[idx];
         var color = kindColor(p[2]);
         var phaseSecs = p[1];
+        Theme.topBar(dc);
         Theme.ring(dc, phaseSecs > 0 ? 1.0 - remaining().toFloat() / phaseSecs : 0, color);
 
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);

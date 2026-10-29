@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 
 // Shared colours and drawing helpers so every screen looks like one app.
 module Theme {
@@ -95,12 +96,22 @@ module Theme {
         text(dc, cx + s * 0.6, y, Graphics.FONT_SMALL, TEXT, label);
     }
 
-    // Small red dot at the top while the Garmin activity is recording.
-    function recDot(dc) {
+    // Time of day at the top (12 or 24 hour, as the watch is set), with a small
+    // red dot beside it while the Garmin activity is recording.
+    function topBar(dc) {
+        var w = dc.getWidth();
+        var y = dc.getHeight() * 0.125;
+        var t = System.getClockTime();
+        var hour = t.hour;
+        if (!System.getDeviceSettings().is24Hour) {
+            hour = hour % 12 == 0 ? 12 : hour % 12;
+        }
+        var label = hour.format("%d") + ":" + t.min.format("%02d");
+        text(dc, w / 2, y, Graphics.FONT_XTINY, MUTED, label);
         if (getApp().workout.active()) {
-            var w = dc.getWidth();
+            var tw = dc.getTextWidthInPixels(label, Graphics.FONT_XTINY);
             dc.setColor(HARD, Graphics.COLOR_TRANSPARENT);
-            dc.fillCircle(w / 2, dc.getHeight() * 0.075, w * 0.012);
+            dc.fillCircle(w / 2 - tw / 2 - w * 0.03, y, w * 0.012);
         }
     }
 

@@ -41,7 +41,7 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
 - **Session menu**: one row per exercise ("1/4 sets 6-8 @ 40"), then
   **Cardio**, **Other day** (another session this week, or the next
   unfinished one), and **Sync** (upload waiting sets and reload).
-- **Exercise screen**: shows the next set's weight and reps.
+- **Exercise screen**: shows the next set's weight and reps, with the time of day at the top (also on the rest and cardio screens).
   - START: set done. The rest countdown starts; a short buzz at 10 s left, a
     long buzz and the screen lights when rest is over.
   - Taps only edit, so a stray touch never logs a set: tap the weight or the

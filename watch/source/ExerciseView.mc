@@ -72,7 +72,8 @@ class ExerciseView extends WatchUi.View {
             Theme.startHint(dc, Theme.TEXT);
             // A swipe that changed the rest shows "+15 s" / "-15 s" here for a moment.
             var label = System.getTimer() < flashUntil ? flash : "REST";
-            Theme.text(dc, cx, h * 0.20, Graphics.FONT_SMALL, color, label);
+            Theme.topBar(dc);
+            Theme.text(dc, cx, h * 0.22, Graphics.FONT_SMALL, color, label);
             Theme.text(dc, cx, h * 0.38, Graphics.FONT_NUMBER_HOT, Theme.TEXT, clock(left));
             Theme.heartRate(dc, cx, h * 0.54);
             // Both lines open an editor when tapped: fix the set just done, or plan the next.
@@ -82,9 +83,9 @@ class ExerciseView extends WatchUi.View {
             return;
         }
 
-        Theme.recDot(dc);
+        Theme.topBar(dc);
         dc.setColor(Theme.MUTED, Graphics.COLOR_TRANSPARENT);
-        fitText(dc, cx, h * 0.17, w * 0.54, shortName(l["name"]));
+        fitText(dc, cx, h * 0.205, w * 0.6, shortName(l["name"]));
 
         if (allDone()) {
             Theme.ring(dc, 1, Theme.GOOD);
@@ -221,6 +222,7 @@ class ExerciseView extends WatchUi.View {
     function onTick() as Void {
         if (!resting) {
             sampleHr();
+            WatchUi.requestUpdate();   // keeps the clock at the top current
             return;
         }
         var left = remaining();
