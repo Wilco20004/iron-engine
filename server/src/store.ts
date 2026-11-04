@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { BlockRow, db, ProfileRow } from './db';
-import { Plan, PlanSchema, formatIssues, parseKey, slug, upgradeKey, weekIndexAt, weekStartDate, weekdayToWorkout, workoutsFor } from './plan';
+import { Plan, PlanSchema, formatIssues, fromWeekdayPlan, parseKey, slug, upgradeKey, weekIndexAt, weekStartDate, weekdayToWorkout, workoutsFor } from './plan';
 
 const PROGRAMS_DIR = process.env.IRON_PROGRAMS_DIR || path.join(__dirname, '..', 'programs');
 const now = () => new Date().toISOString();
@@ -177,13 +177,21 @@ export function migrateLegacyLog() {
 export function migrateToWorkouts() {
   const blocks = db.prepare('SELECT * FROM blocks').all() as BlockRow[];
   const programs = db.prepare('SELECT id, data FROM programs').all() as { id: string; data: string }[];
+  if (!blocks.some(b => weekdayToWorkout(JSON.parse(b.plan))) && !programs.some(p => weekdayToWorkout(JSON.parse(p.data)))) return;
+  // Keep a copy of the database as it was, in case the conversion needs undoing.
+  const backup = db.name + '.before-workouts';
+  if (!fs.existsSync(backup)) { db.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`); console.log(`Saved a copy of the database to ${backup}`); }
   db.transaction(() => {
     for (const b of blocks) {
       const raw = JSON.parse(b.plan);
       const map = weekdayToWorkout(raw);
       if (!map) continue;
       const parsed = PlanSchema.safeParse(raw);
-      if (!parsed.success) { console.error(`Block ${b.id}: can't convert plan\n${formatIssues(parsed.error)}`); continue; }
+      if (!parsed.success) console.error(`Block ${b.id}: plan has problems, converted as is
+${formatIssues(parsed.error)}`);
+      // A plan that fails the checks (edited by hand) is still converted, so the block keeps working.
+      const converted = fromWeekdayPlan(raw) as Plan;
+      const plan = parsed.success ? parsed.data : { ...converted, weeks: converted.weeks.map(w => ({ ...w, skip: w.skip ?? [] })), offDays: converted.offDays ?? [] };
       const rows = db.prepare('SELECT key, data, updated_at FROM log_entries WHERE block_id = ?').all(b.id) as { key: string; data: string; updated_at: string }[];
       db.prepare('DELETE FROM log_entries WHERE block_id = ?').run(b.id);
       const insert = db.prepare('INSERT OR REPLACE INTO log_entries (profile_id, block_id, key, data, updated_at) VALUES (?, ?, ?, ?, ?)');
@@ -194,7 +202,7 @@ export function migrateToWorkouts() {
         const key = k ? `${k.week}-${d ?? 90 + k.day}-${k.item}` : r.key;
         insert.run(b.profile_id, b.id, key, r.data, r.updated_at);
       }
-      db.prepare('UPDATE blocks SET plan = ? WHERE id = ?').run(JSON.stringify(parsed.data), b.id);
+      db.prepare('UPDATE blocks SET plan = ? WHERE id = ?').run(JSON.stringify(plan), b.id);
       console.log(`Block ${b.id}: weekdays converted to workouts.`);
     }
     for (const p of programs) {

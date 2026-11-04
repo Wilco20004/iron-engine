@@ -29,7 +29,7 @@ export const LiftSchema = z.object({
   rest: z.string().min(1).max(20).describe('Rest between sets, e.g. "90 s" or "2–3 min" (drives the rest timer). In a superset, the rest after the last exercise of the round.'),
   cue: z.string().max(200).default('').describe('One short coaching cue.'),
   main: z.boolean().default(false).describe('Main lift: gets the extra set in weeks with extraSets.'),
-  pair: z.string().regex(/^[A-Za-z][1-9]$/).optional().describe('Superset label: "A1" and "A2" are done back to back, resting after A2.'),
+  pair: z.string().min(1).max(4).optional().describe('Superset label: "A1" and "A2" are done back to back, resting after A2.'),
   caution: z.string().max(400).optional().describe('Person-specific caution shown with a ⚠, e.g. an injury note.'),
   goal: GoalSchema.optional().describe('What this exercise is building towards, e.g. { "sets": 3, "reps": 10 } for 3 × 10 strict pull-ups.'),
   progress: z.enum(['load', 'reps', 'none']).optional().describe('How to build up: "load" adds weight once every set reaches the top of the rep range; "reps" adds a rep (bodyweight, holds). Default from the exercise\'s load type.'),
@@ -115,7 +115,7 @@ export type Lift = Workout['lifts'][number];
 
 // Older plans had seven weekdays ("days", some of them rest days) shared by
 // every week. Training days become workouts; rest days become offDays.
-function fromWeekdayPlan(raw: unknown): unknown {
+export function fromWeekdayPlan(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object' || !Array.isArray((raw as { days?: unknown }).days) || 'workouts' in raw) return raw;
   const { days, ...rest } = raw as { days: Record<string, unknown>[] } & Record<string, unknown>;
   const offDays: Record<string, unknown>[] = [];
