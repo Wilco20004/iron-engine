@@ -39,8 +39,9 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
 ## Using it
 
 - **Session menu**: one row per exercise ("1/4 sets 6-8 @ 40"), then
-  **Cardio**, **Other day** (another session this week, or the next
-  unfinished one), and **Sync** (upload waiting sets and reload).
+  **Cardio**, **Other workout** (another workout this week, in any order, or
+  the next one still to do), and **Sync** (upload waiting sets and reload).
+  A superset (A1, A2) is one row.
 - **Exercise screen**: shows the next set's weight and reps, with the time of day at the top (also on the rest and cardio screens).
   - START: set done. The rest countdown starts; a short buzz at 10 s left, a
     long buzz and the screen lights when rest is over.
@@ -59,6 +60,10 @@ front of a Home Assistant add-on, forward `/iron/watch/` to the add-on's
     set you just did (it's uploaded again), **Next** to change the coming set.
     Other taps are ignored. **Last** is also on the "Done" screen.
   - Swipe up/down: reps -1/+1.
+  - Superset: START on A1 goes straight to A2 (a short buzz, "Next: A2"); START
+    on the last one starts the rest, then it's back to A1 for the next round.
+  - The weight and reps shown come from the last time you did the exercise:
+    once every set reaches the top of the rep range, the weight goes up.
   - Back: return to the menu.
 - **Cardio**: tap to start/pause, swipe up to skip a part. Each phase change
   buzzes (double buzz when a hard interval starts). Minutes are saved at the end.
@@ -76,7 +81,7 @@ own person's training.
 
 | Method | Path | Body / query |
 |---|---|---|
-| GET | `/watch/session` | optional `?week=&day=` (indexes); default is the next unfinished session |
+| GET | `/watch/session` | optional `?week=&day=` (week and workout positions); default is this calendar week's next workout to do. Lifts carry `group`/`pair` (supersets), `kg`/`repT` (suggested from the last time), `tip` and `goal` |
 | POST | `/watch/set` | `{ week, day, lift, set, kg, reps, fail, sec, hr }` (indexes into the session; `sec` = set duration, `hr` = peak heart rate) |
 | POST | `/watch/cardio` | `{ week, day, min }` |
 | POST | `/watch/workout` | `{ week, day, min, avgHr, maxHr, kcal }`, stored as the session's `-watch` log entry |

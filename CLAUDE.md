@@ -6,7 +6,7 @@ Ships as a Docker image and a Home Assistant add-on (`config.yaml`).
 
 ## Layout
 
-- `server/src/plan.ts`: zod `PlanSchema` (the shape of every plan), `slug()`, log-key helpers
+- `server/src/plan.ts`: zod `PlanSchema` (the shape of every plan), calendar weeks, goals and `suggestNext()`, `slug()`, log-key helpers
 - `server/src/store.ts`: templates, blocks, log entries, exercise library, progress, connector token
 - `server/src/db.ts`: schema and the version-1 → blocks migration (table rename)
 - `server/src/routes.ts`: the app's REST API (`/api`)
@@ -19,8 +19,12 @@ Ships as a Docker image and a Home Assistant add-on (`config.yaml`).
 
 ## Rules that are easy to break
 
-- Log keys are `<week>-<day>-<slug(exercise name)>`, `-cardio`, `-end`, `-watch` (Garmin activity summary). `slug()` exists in
-  both `server/src/plan.ts` and `web/src/main.js` and must stay identical.
+- Blocks run in calendar weeks (Monday to Sunday) from `started_at`. Each week is a checklist of workouts done in any
+  order: `weeks[n].workouts` (its own list) or `plan.workouts`, minus `weeks[n].skip`. There are no weekdays in a plan.
+- Log keys are `<week>-<workout>-<slug(exercise name)>`, `-cardio`, `-end`, `-watch` (Garmin activity summary), where
+  `<workout>` is the position in that week's list: never reorder or remove workouts in a week that has logs (skip them).
+- `slug()`, `suggestNext()`/`repRange()`/goal helpers and `lastSets()`/`lastTime()` exist in both the server and
+  `web/src/main.js` and must stay identical.
 - A block stores its own copy of the plan. Never edit an ended block's plan.
 - Template files are re-seeded on start-up only while not customized through the connector.
 - Barbell weights are logged as the total on the bar (bar included); dumbbells per dumbbell.

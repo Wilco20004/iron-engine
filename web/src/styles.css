@@ -62,7 +62,7 @@ header { display: grid; gap: 12px; }
 .tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--iron); outline-offset: 2px; }
 
 /* week grid */
-.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.week { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 6px; }
 .dayc { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 8px; cursor: pointer; display: grid; gap: 6px; text-align: left; color: var(--fg); font: inherit; min-width: 0; }
 .dayc[aria-selected="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
 .dayc .d { font: 700 1.05rem var(--f-display); text-transform: uppercase; }
@@ -71,7 +71,6 @@ header { display: grid; gap: 12px; }
 .mini span { display: block; height: 100%; }
 .prog { font-family: var(--f-data); font-size: .75rem; color: var(--done); min-height: 1em; }
 @media (max-width: 640px) {
-  .week { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* session */
@@ -252,3 +251,23 @@ details.howto[open] summary { margin-bottom: 8px; }
 .ok { color: var(--engine); font-size: .92rem; }
 .settings-sec { display: grid; gap: 10px; padding-block: 6px 14px; border-bottom: 1px solid var(--line); }
 .settings-sec:last-child { border-bottom: 0; }
+
+/* Calendar weeks: this week's tab, and each workout's status this week. */
+.tab .now-dot { font: 600 .65rem var(--f-display); letter-spacing: .08em; color: var(--done); margin-left: 6px; }
+.tab[aria-selected="true"] .now-dot { color: var(--bg); }
+.dayc.is-next { border-color: var(--iron); }
+.dayc.is-next .d { color: var(--iron); }
+.dayc.st-skipped .t, .dayc.st-missed .t { text-decoration: line-through; text-decoration-color: var(--muted); }
+.dayc.st-skipped .prog, .dayc.st-missed .prog { color: var(--muted); }
+.dayc.st-missed .prog { color: var(--hard); }
+.dayc.st-off { border-style: dashed; }
+
+/* Supersets: a bracket down the left of the rows done back to back. */
+tr.ss td:first-child { box-shadow: inset 3px 0 0 var(--iron); }
+tr.ss:not(.ss-last) td { border-bottom-color: transparent; }
+
+/* Exercise goals */
+.goal-chip { display: inline-block; margin-left: 6px; font: 600 .68rem var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--done); }
+.chip.goal { background: var(--engine-soft); color: var(--done); }
+.goal-note { font-size: .9rem; color: var(--muted); border-left: 3px solid var(--done); padding: 4px 10px; background: var(--engine-soft); border-radius: 0 6px 6px 0; margin: 0; }
+.goal-note.done { color: var(--fg); }

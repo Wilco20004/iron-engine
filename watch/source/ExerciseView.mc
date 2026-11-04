@@ -5,10 +5,15 @@ import Toybox.System;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-// One exercise: shows the next set (kg x reps), logs it on tap or START,
-// then runs the rest countdown with vibrations.
+// One exercise, or a superset (A1, A2...): shows the next set (kg x reps),
+// logs it on START, then runs the rest countdown with vibrations. In a
+// superset START moves straight on to the next exercise of the round, and the
+// rest comes after the last one, then it's back to the first.
 class ExerciseView extends WatchUi.View {
-    var li;
+    var li;                    // the exercise on screen
+    var group;                 // lift indices done together (just [li] when not a superset)
+    var lastLi = -1;           // the exercise the last set was logged on
+    hidden var pending = {};   // a superset's other exercises' edited kg/reps, by lift index
     var kg = "";
     var reps = "";
     var fail = false;
@@ -22,12 +27,17 @@ class ExerciseView extends WatchUi.View {
     hidden var flash = "";     // "+15 s" after a swipe changed the rest
     hidden var flashUntil = 0;
 
-    function initialize(index) {
+    function initialize(indices) {
         View.initialize();
-        li = index;
-        var l = lift();
-        kg = l["kg"] == null ? "" : l["kg"];
-        reps = l["repT"].toString();
+        group = indices;
+        li = group[0];
+        for (var i = 0; i < group.size(); i++) {
+            if (setsLeft(group[i]) > 0) {
+                li = group[i];
+                break;
+            }
+        }
+        load(li);
         beginSet();
         // One tick a second: counts the rest down, or samples heart rate during a set.
         timer = new Timer.Timer();
@@ -50,12 +60,52 @@ class ExerciseView extends WatchUi.View {
         return getApp().session["lifts"][li];
     }
 
+    function setsLeft(i) {
+        var l = getApp().session["lifts"][i];
+        return l["sets"] - l["logged"].size();
+    }
+
+    // Shows exercise i, keeping what was entered for the one it replaces.
+    function load(i) {
+        if (li != i) {
+            pending[li] = [kg, reps, fail];
+        }
+        li = i;
+        var p = pending[i];
+        if (p != null) {
+            kg = p[0];
+            reps = p[1];
+            fail = p[2];
+            return;
+        }
+        var l = lift();
+        kg = l["kg"] == null ? "" : l["kg"].toString();
+        reps = l["repT"].toString();
+        fail = false;
+    }
+
+    function isSuperset() {
+        return group.size() > 1;
+    }
+
     function nextSet() {
         return lift()["logged"].size();
     }
 
     function allDone() {
-        return nextSet() >= lift()["sets"];
+        for (var i = 0; i < group.size(); i++) {
+            if (setsLeft(group[i]) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // "A2 Rope pushdown" in a superset, else the short name.
+    function title() {
+        var l = lift();
+        var p = l["pair"];
+        return (p != null && p.length() > 0 ? p + " " : "") + shortName(l["name"]);
     }
 
     function onUpdate(dc) {
@@ -78,14 +128,14 @@ class ExerciseView extends WatchUi.View {
             Theme.heartRate(dc, cx, h * 0.54);
             // Both lines open an editor when tapped: fix the set just done, or plan the next.
             Theme.text(dc, cx, h * 0.665, Graphics.FONT_SMALL, Theme.MUTED, "Last  " + setLabel(lastSet()));
-            Theme.text(dc, cx, h * 0.775, Graphics.FONT_SMALL, Theme.TEXT, "Next  " + setLabel({"kg" => kg, "reps" => reps, "fail" => fail}));
+            Theme.text(dc, cx, h * 0.775, Graphics.FONT_SMALL, Theme.TEXT, "Next  " + (isSuperset() ? lift()["pair"] + " " : "") + setLabel({"kg" => kg, "reps" => reps, "fail" => fail}));
             Theme.dots(dc, cx, h * 0.88, l["sets"], nextSet(), Theme.ACCENT);
             return;
         }
 
         Theme.topBar(dc);
         dc.setColor(Theme.MUTED, Graphics.COLOR_TRANSPARENT);
-        fitText(dc, cx, h * 0.205, w * 0.6, shortName(l["name"]));
+        fitText(dc, cx, h * 0.205, w * 0.6, title());
 
         if (allDone()) {
             Theme.ring(dc, 1, Theme.GOOD);
@@ -96,7 +146,12 @@ class ExerciseView extends WatchUi.View {
             return;
         }
 
-        Theme.dots(dc, cx, h * 0.28, l["sets"], nextSet(), Theme.ACCENT);
+        // Just moved on within a superset: say so where the set dots go.
+        if (System.getTimer() < flashUntil) {
+            Theme.text(dc, cx, h * 0.28, Graphics.FONT_XTINY, Theme.ACCENT, flash);
+        } else {
+            Theme.dots(dc, cx, h * 0.28, l["sets"], nextSet(), Theme.ACCENT);
+        }
 
         // No weight yet (or a bodyweight exercise): show "--" until one is entered.
         if (kg.length() > 0) {
@@ -129,8 +184,12 @@ class ExerciseView extends WatchUi.View {
         }
     }
 
+    function lastIndex() {
+        return lastLi >= 0 ? lastLi : li;
+    }
+
     function lastSet() {
-        var logged = lift()["logged"];
+        var logged = getApp().session["lifts"][lastIndex()]["logged"];
         return logged.size() > 0 ? logged[logged.size() - 1] : null;
     }
 
@@ -171,13 +230,40 @@ class ExerciseView extends WatchUi.View {
         }
         sampleHr();
         getApp().logSet(li, kg, reps, fail, (System.getTimer() - setStart) / 1000, peakHr);
+        lastLi = li;
         fail = false;
+        pending.remove(li);
         if (allDone()) {
             buzz(2);
             WatchUi.requestUpdate();
             return;
         }
-        startRest(lift()["rest"]);
+        if (!isSuperset()) {
+            startRest(lift()["rest"]);
+            return;
+        }
+        // Superset: on to the next exercise of the round with no rest, or rest
+        // (the last exercise's rest) and go back to the first with sets left.
+        var at = group.indexOf(li);
+        for (var i = at + 1; i < group.size(); i++) {
+            if (setsLeft(group[i]) > 0) {
+                load(group[i]);
+                beginSet();
+                buzz(1);
+                flash = "Next: " + lift()["pair"];
+                flashUntil = System.getTimer() + 2000;
+                WatchUi.requestUpdate();
+                return;
+            }
+        }
+        var restFor = getApp().session["lifts"][group[group.size() - 1]]["rest"];
+        for (var i = 0; i < group.size(); i++) {
+            if (setsLeft(group[i]) > 0) {
+                load(group[i]);
+                break;
+            }
+        }
+        startRest(restFor);
     }
 
     // While resting: +15 s or -15 s (so an accidental swipe can be undone), never
@@ -356,8 +442,9 @@ class ExerciseDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function fixLast() {
-        var n = view.nextSet();
-        var set = new LoggedSet(view.li, n - 1);
+        var i = view.lastIndex();
+        var n = getApp().session["lifts"][i]["logged"].size();
+        var set = new LoggedSet(i, n - 1);
         var menu = new EditMenu(set, "Fix set " + n);
         WatchUi.pushView(menu, new EditMenuDelegate(set, menu), WatchUi.SLIDE_UP);
     }

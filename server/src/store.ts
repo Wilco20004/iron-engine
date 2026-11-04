@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { BlockRow, db, ProfileRow } from './db';
-import { Plan, PlanSchema, formatIssues, parseKey, slug, upgradeKey } from './plan';
+import { Plan, PlanSchema, formatIssues, parseKey, slug, upgradeKey, weekIndexAt, weekStartDate, weekdayToWorkout, workoutsFor } from './plan';
 
 const PROGRAMS_DIR = process.env.IRON_PROGRAMS_DIR || path.join(__dirname, '..', 'programs');
 const now = () => new Date().toISOString();
@@ -170,10 +170,109 @@ export function migrateLegacyLog() {
   console.log('Moved version 1 log entries into blocks.');
 }
 
+// Plans used to have seven weekdays shared by every week; now each week is a
+// list of workouts. Convert stored plans and templates, and move log keys from
+// the weekday's position to the workout's ("2-3-squat" on Thursday becomes
+// "2-2-squat" when Wednesday was a rest day).
+export function migrateToWorkouts() {
+  const blocks = db.prepare('SELECT * FROM blocks').all() as BlockRow[];
+  const programs = db.prepare('SELECT id, data FROM programs').all() as { id: string; data: string }[];
+  db.transaction(() => {
+    for (const b of blocks) {
+      const raw = JSON.parse(b.plan);
+      const map = weekdayToWorkout(raw);
+      if (!map) continue;
+      const parsed = PlanSchema.safeParse(raw);
+      if (!parsed.success) { console.error(`Block ${b.id}: can't convert plan\n${formatIssues(parsed.error)}`); continue; }
+      const rows = db.prepare('SELECT key, data, updated_at FROM log_entries WHERE block_id = ?').all(b.id) as { key: string; data: string; updated_at: string }[];
+      db.prepare('DELETE FROM log_entries WHERE block_id = ?').run(b.id);
+      const insert = db.prepare('INSERT OR REPLACE INTO log_entries (profile_id, block_id, key, data, updated_at) VALUES (?, ?, ?, ?, ?)');
+      for (const r of rows) {
+        const k = parseKey(r.key);
+        const d = k ? map[k.day] : null;
+        // Anything logged on a rest day (there shouldn't be) keeps its key past the workouts.
+        const key = k ? `${k.week}-${d ?? 90 + k.day}-${k.item}` : r.key;
+        insert.run(b.profile_id, b.id, key, r.data, r.updated_at);
+      }
+      db.prepare('UPDATE blocks SET plan = ? WHERE id = ?').run(JSON.stringify(parsed.data), b.id);
+      console.log(`Block ${b.id}: weekdays converted to workouts.`);
+    }
+    for (const p of programs) {
+      const raw = JSON.parse(p.data);
+      if (!weekdayToWorkout(raw)) continue;
+      const parsed = PlanSchema.safeParse(raw);
+      if (parsed.success) db.prepare('UPDATE programs SET data = ? WHERE id = ?').run(JSON.stringify(parsed.data), p.id);
+    }
+  })();
+}
+
+/* ---------- weeks ---------- */
+
+type Entries = Record<string, Record<string, any>>;
+
+// Done: every exercise done, the cardio done, or ended early.
+export function workoutDone(plan: Plan, entries: Entries, week: number, workout: number): boolean {
+  const w = workoutsFor(plan, week)[workout];
+  if (!w) return false;
+  if (entries[`${week}-${workout}-end`] || entries[`${week}-${workout}-cardio`]?.done) return true;
+  return w.lifts.every(l => entries[`${week}-${workout}-${slug(l.name)}`]?.done);
+}
+
+export type WorkoutStatus = 'done' | 'started' | 'todo' | 'skipped' | 'missed';
+
+// Each workout of a week: done, started, still to do, skipped (planned), or
+// missed (the week is over and it wasn't done).
+export function weekStatus(block: BlockRow, plan: Plan, entries: Entries, week: number, at: Date = new Date()) {
+  const over = weekIndexAt(block.started_at, at) > week;
+  return workoutsFor(plan, week).map((w, i) => {
+    let status: WorkoutStatus;
+    if (workoutDone(plan, entries, week, i)) status = 'done';
+    else if (plan.weeks[week]?.skip.includes(i)) status = 'skipped';
+    else if (Object.entries(entries).some(([k, e]) => k.startsWith(`${week}-${i}-`) && (e.done || (e.sets ?? []).some((s: Record<string, unknown>) => s.done)))) status = over ? 'missed' : 'started';
+    else status = over ? 'missed' : 'todo';
+    return { index: i, title: w.title, status };
+  });
+}
+
+// This calendar week of the block, capped at its last week (finished = the
+// block has run past its last week).
+export function currentWeek(block: BlockRow, plan: Plan, at: Date = new Date()) {
+  const n = weekIndexAt(block.started_at, at);
+  return { week: Math.min(n, plan.weeks.length - 1), finished: n >= plan.weeks.length, startsOn: weekStartDate(block.started_at, Math.min(n, plan.weeks.length - 1)) };
+}
+
+// The sets done the last time an exercise was logged, other than in (week,
+// workout) itself: the latest week in this block, then the latest date in it
+// (workouts can be done in any order), else the previous block's last normal (not recovery) week.
+// Must match lastTime() in web/src/main.js.
+export function lastSets(profileId: string, block: BlockRow, entries: Entries, name: string, week: number, workout: number) {
+  const s = slug(name);
+  let best: { w: number; d: number; date: string; sets: Record<string, any>[] } | null = null;
+  for (const [key, e] of Object.entries(entries)) {
+    const k = parseKey(key);
+    if (!k || k.item !== s || k.week > week || (k.week === week && k.day === workout)) continue;
+    const sets = ((e.sets ?? []) as Record<string, any>[]).filter(x => x.done);
+    const date = String(e.date ?? '');
+    if (sets.length && (!best || k.week > best.w || (k.week === best.w && (date > best.date || (date === best.date && k.day > best.d))))) best = { w: k.week, d: k.day, date, sets };
+  }
+  if (best) return { from: `week ${best.w + 1}`, sets: best.sets };
+  const prev = listBlocks(profileId).find(b => b.number === block.number - 1);
+  if (!prev) return null;
+  const prevPlan = blockPlan(prev);
+  let found: { w: number; sets: Record<string, any>[] } | null = null;
+  for (const [key, e] of Object.entries(blockEntries(profileId, prev.id))) {
+    const k = parseKey(key);
+    if (!k || k.item !== s || prevPlan.weeks[k.week]?.cardio === 'deload') continue;
+    const sets = ((e.sets ?? []) as Record<string, any>[]).filter(x => x.done);
+    if (sets.length && (!found || k.week > found.w)) found = { w: k.week, sets };
+  }
+  return found ? { from: `last block, week ${found.w + 1}`, sets: found.sets } : null;
+}
+
 /* ---------- readable summaries (connector) ---------- */
 
 export type Readable = {
-  week: string; day: string; item: string; date?: string;
+  week: string; workout: string; item: string; date?: string;
   sets?: { kg: string; reps: string; fail?: boolean; seconds?: string; peakHr?: string }[]; done?: boolean;
   cardio?: Record<string, unknown>; endedEarly?: Record<string, unknown>; garmin?: Record<string, unknown>;
 };
@@ -183,14 +282,14 @@ export function readableLog(plan: Plan, entries: Record<string, Record<string, u
   for (const [key, e] of Object.entries(entries)) {
     const k = parseKey(key);
     if (!k) continue;
-    const day = plan.days[k.day];
+    const day = workoutsFor(plan, k.week)[k.day];
     const week = plan.weeks[k.week];
-    const liftIndex = day && 'lifts' in day ? day.lifts.findIndex(l => slug(l.name) === k.item) : -1;
+    const liftIndex = day ? day.lifts.findIndex(l => slug(l.name) === k.item) : -1;
     const r: Readable & { order: number[] } = {
       week: week?.name ?? `Week ${k.week + 1}`,
-      day: day ? `${day.d} ${day.title}` : `Day ${k.day + 1}`,
+      workout: day ? day.title : `Workout ${k.day + 1}`,
       item: k.item === 'cardio' ? 'Cardio' : k.item === 'end' ? 'Ended early' : k.item === 'watch' ? 'Garmin activity'
-        : (liftIndex >= 0 && 'lifts' in day ? day.lifts[liftIndex].name : String(e.item ?? k.item)),
+        : (liftIndex >= 0 ? day.lifts[liftIndex].name : String(e.item ?? k.item)),
       order: [k.week, k.day, k.item === 'watch' ? 100 : k.item === 'end' ? 99 : k.item === 'cardio' ? 98 : liftIndex < 0 ? 97 : liftIndex],
     };
     if (e.date) r.date = String(e.date);
@@ -228,8 +327,8 @@ export function progress(profileId: string, exercise?: string) {
       if (!k || k.item === 'cardio' || k.item === 'end' || k.item === 'watch' || (want && k.item !== want)) continue;
       const sets = ((e.sets as { kg?: string; reps?: string; done?: boolean; fail?: boolean }[]) ?? []).filter(s => s.done);
       if (!sets.length) continue;
-      const day = plan.days[k.day];
-      const name = day && 'lifts' in day ? day.lifts.find(l => slug(l.name) === k.item)?.name ?? String(e.item ?? k.item) : String(e.item ?? k.item);
+      const day = workoutsFor(plan, k.week)[k.day];
+      const name = day ? day.lifts.find(l => slug(l.name) === k.item)?.name ?? String(e.item ?? k.item) : String(e.item ?? k.item);
       let best = sets[0], bestE = -1, volume = 0;
       for (const s of sets) {
         const kg = parseFloat(s.kg ?? ''), reps = parseInt(s.reps ?? '', 10);

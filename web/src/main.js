@@ -3,8 +3,9 @@ import "./styles.css";
 import { api } from "./api.js";
 
 // Filled from the server once someone signs in.
+// DAYS is the selected week's workout list (weeks can have their own).
 let PROGRAM = null, LIB = {}, WEEKS = [], DAYS = [], INFO = {}, PHOTOS = {}, ME = null;
-let BLOCK = null, BLOCKS = [], PREVIOUS = null;
+let BLOCK = null, BLOCKS = [], PREVIOUS = null, NOW = { week: 0, finished: false };
 const ytLink = n => "https://www.youtube.com/results?search_query=" + encodeURIComponent(n.replace(/\(.*\)/, "") + " exercise form");
 function hrRange(pct) {
   const max = ME?.age ? 220 - ME.age : null;
@@ -18,14 +19,20 @@ function applyProgram(program, exercises) {
     PHOTOS[x.photo || name] = { img: Array.from({ length: x.images || 0 }, (_, n) => `exercises/${x.photo}-${n}.jpg`), muscles: x.muscles || [], secondary: x.secondary || [] };
   }
   WEEKS = program.weeks;
-  DAYS = program.days.map(d => d.rest ? d : {
+  DAYS = workoutsOf(state.week);
+}
+// A week's workouts (its own list, or the plan's) in the shapes used below.
+// Lift rows: [name, sets, reps, rest, cue, main, pair, caution, lift object].
+function workoutsOf(w) {
+  return (WEEKS[w]?.workouts || PROGRAM.workouts).map(d => ({
     ...d,
     // A lift's own caution (e.g. "right shoulder") overrides the library's general one.
-    lifts: d.lifts.map(l => [l.name, l.sets, l.reps, l.rest, l.cue, !!l.main, l.pair, l.caution || LIB[l.name]?.caution || ""]),
+    lifts: d.lifts.map(l => [l.name, l.sets, l.reps, l.rest, l.cue, !!l.main, l.pair, l.caution || LIB[l.name]?.caution || "", l]),
     cardio: { ...d.cardio, hr: hrRange(d.cardio.pct) },
-  });
+  }));
 }
 
+// state.day is the workout's position in the week, or "off" for the other-days page.
 let state = { week: 0, day: 0 };
 let log = {};
 let loaded = false, synced = {}, syncTimer = null, syncing = false;
@@ -60,48 +67,120 @@ function cardioFor(day, wk) {
 function engineMin(day, wk) { return wk.cardio === "deload" ? (PROGRAM.deloadCardio?.minutes || 15) : day.engine; }
 function ironMin(day, wk) { return wk.setScale < 1 ? 30 : day.iron + (wk.extraSets ? 6 : 0); }
 function progress(w, di) {
-  const day = DAYS[di]; if (day.rest) return null;
+  const day = DAYS[di]; if (!day) return null;
   const total = day.lifts.length + 1;
   let n = 0;
   for (let i = 0; i < total; i++) if (log[key(w, di, i)]?.done) n++;
   return [n, total];
 }
 
+/* ---------- calendar weeks ---------- */
+// A block runs Monday to Sunday from the week it started in (same as the server).
+function blockMonday() {
+  const d = new Date(BLOCK?.startedAt || Date.now());
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+}
+function weekDates(w) {
+  const m = blockMonday(), a = new Date(m.getFullYear(), m.getMonth(), m.getDate() + w * 7), b = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 6);
+  const f = (d, mon) => d.getDate() + (mon ? " " + d.toLocaleDateString([], { month: "short" }) : "");
+  return f(a, a.getMonth() !== b.getMonth()) + "–" + f(b, true);
+}
+const isThisWeek = w => w === NOW.week && !NOW.finished;
+const isPast = w => w < NOW.week || NOW.finished;
+// done, started, todo, skipped or missed (the week is over and it wasn't done).
+function statusOf(w, i) {
+  const d = DAYS[i];
+  if (log[key(w, i, "end")] || log[key(w, i, d.lifts.length)]?.done || d.lifts.every((_, j) => log[key(w, i, j)]?.done)) return "done";
+  if (WEEKS[w]?.skip?.includes(i)) return "skipped";
+  if (isPast(w)) return "missed";
+  return Object.entries(log).some(([k, e]) => k.startsWith(w + "-" + i + "-") && (e?.done || (e?.sets || []).some(s => s.done))) ? "started" : "todo";
+}
+// The first workout this week that's neither done nor skipped.
+function nextDue(w) {
+  const i = DAYS.findIndex((_, n) => ["started", "todo"].includes(statusOf(w, n)));
+  return i < 0 ? 0 : i;
+}
+
+/* ---------- supersets ---------- */
+// Lifts with pair "A1", "A2" are done back to back: these are the positions in
+// the workout of i's superset, in order (just [i] when it isn't in one).
+function groupOf(i) {
+  const g = DAYS[state.day].lifts[i]?.[6]?.[0]?.toUpperCase();
+  if (!g) return [i];
+  return DAYS[state.day].lifts.map((l, n) => [l, n]).filter(([l]) => l[6]?.[0]?.toUpperCase() === g).sort((a, b) => a[0][6].localeCompare(b[0][6])).map(([, n]) => n);
+}
+
+/* ---------- goals and building up (must match server/src/plan.ts) ---------- */
+function repRange(reps) {
+  const m = String(reps).match(/(\d+)\s*(?:[–—-]\s*(\d+))?/);
+  if (!m) return null;
+  const lo = +m[1], hi = m[2] ? +m[2] : lo;
+  return { lo: Math.min(lo, hi), hi: Math.max(lo, hi), timed: /\d\s*s\b|sec/i.test(reps) };
+}
+const numOf = s => { const n = parseFloat(s ?? ""); return Number.isFinite(n) ? n : null; };
+const fmtKg = n => String(Math.round(n * 100) / 100);
+function goalText(g) { return `${g.sets > 1 ? g.sets + " × " : ""}${g.kg !== undefined ? fmtKg(g.kg) + " kg × " : ""}${g.reps}`; }
+function goalSets(g, sets) { return sets.filter(s => (numOf(s.reps) ?? 0) >= g.reps && (g.kg === undefined || (numOf(s.kg) ?? 0) >= g.kg)).length; }
+function suggestNext(lift, load, last, wk) {
+  const range = repRange(lift.reps), startReps = range ? String(range.lo) : "";
+  const sets = (last || []).filter(s => s.reps);
+  if (!sets.length) return { kg: "", reps: startReps, why: "" };
+  const kg = sets.find(s => s.kg)?.kg ?? "", done = sets.map(s => numOf(s.reps) ?? 0), least = Math.min(...done);
+  if (!range) return { kg, reps: String(least), why: "Same as last time" };
+  if (wk.setScale < 1 || wk.cardio === "deload") return { kg, reps: startReps, why: "Recovery week: same weight, easy reps" };
+  const mode = lift.progress || (["bodyweight", "time", "band"].includes(load) ? "reps" : "load");
+  if (mode === "none") return { kg, reps: String(least), why: "Same as last time" };
+  const inc = range.timed ? 5 : 1;
+  if (mode === "reps") {
+    const next = Math.min(lift.goal?.reps ?? Infinity, Math.max(range.lo, least + inc));
+    return { kg, reps: String(next), why: next > least ? `Add ${inc === 5 ? "5 s" : "a rep"}` : "Hold it there" };
+  }
+  const kgN = numOf(kg);
+  if (kgN !== null && done.every(r => r >= range.hi) && !sets.some(s => s.fail)) {
+    const step = lift.step || (load === "dumbbell" ? 2 : load === "machine" ? 5 : load === "single" ? 2 : 2.5);
+    return { kg: fmtKg(kgN + step), reps: startReps, why: `Every set reached ${range.hi}: add ${fmtKg(step)} kg` };
+  }
+  const next = Math.min(range.hi, Math.max(range.lo, least + inc));
+  return { kg, reps: String(next), why: `Same weight, aim for ${next}` };
+}
+
 function renderWeeks() {
   const el = document.getElementById("weekTabs");
-  el.innerHTML = WEEKS.map((w, i) => `<button class="tab" role="tab" type="button" id="wk-${i}" aria-selected="${i === state.week}" data-w="${i}">${w.name}<small>${w.tag} · RIR ${w.rir}</small></button>`).join("");
+  el.innerHTML = WEEKS.map((w, i) => `<button class="tab${isThisWeek(i) ? " now" : ""}" role="tab" type="button" id="wk-${i}" aria-selected="${i === state.week}" data-w="${i}">${w.name}${isThisWeek(i) ? ' <span class="now-dot">This week</span>' : ""}<small>${weekDates(i)} · ${w.tag} · RIR ${w.rir}</small></button>`).join("");
 }
+const STATUS = { done: "✓ Done", started: "Started", todo: "To do", skipped: "Skipped", missed: "Missed" };
 function renderGrid() {
-  const wk = WEEKS[state.week];
-  document.getElementById("weekGrid").innerHTML = DAYS.map((d, i) => {
-    let bar = "", prog = "";
-    if (!d.rest) {
-      const wm = d.warm, im = ironMin(d, wk), em = engineMin(d, wk), t = wm + im + em;
-      bar = `<div class="mini" aria-hidden="true"><span style="width:${wm / t * 100}%;background:var(--warm)"></span><span style="width:${im / t * 100}%;background:var(--iron)"></span><span style="width:${em / t * 100}%;background:var(--engine)"></span></div>`;
-      const p = progress(state.week, i);
-      prog = p[0] ? (p[0] === p[1] ? "✓ done" : p[0] + "/" + p[1]) : "";
-      if (log[key(state.week, i, "end")]) prog = (p[0] ? p[0] + "/" + p[1] + " · " : "") + "ended early";
-    } else {
-      bar = `<div class="mini" aria-hidden="true"></div>`;
-    }
-    return `<button class="dayc" role="tab" type="button" id="day-${i}" aria-selected="${i === state.day}" data-d="${i}"><span class="d">${d.d}</span><span class="t">${d.title}</span>${bar}<span class="prog">${prog}</span></button>`;
-  }).join("");
+  const wk = WEEKS[state.week], next = isThisWeek(state.week) ? nextDue(state.week) : -1;
+  const cards = DAYS.map((d, i) => {
+    const wm = d.warm, im = ironMin(d, wk), em = engineMin(d, wk), t = wm + im + em;
+    const bar = `<div class="mini" aria-hidden="true"><span style="width:${wm / t * 100}%;background:var(--warm)"></span><span style="width:${im / t * 100}%;background:var(--iron)"></span><span style="width:${em / t * 100}%;background:var(--engine)"></span></div>`;
+    const st = statusOf(state.week, i), p = progress(state.week, i);
+    let prog = st === "started" ? p[0] + "/" + p[1] : st === "todo" ? "" : st === "missed" && p[0] ? p[0] + "/" + p[1] + " · missed" : STATUS[st];
+    if (log[key(state.week, i, "end")]) prog = (p[0] ? p[0] + "/" + p[1] + " · " : "") + "ended early";
+    const tag = i === next && st !== "done" ? "Next up" : "Workout " + (i + 1);
+    return `<button class="dayc st-${st}${i === next ? " is-next" : ""}" role="tab" type="button" id="day-${i}" aria-selected="${i === state.day}" data-d="${i}"><span class="d">${tag}</span><span class="t">${esc(d.title)}</span>${bar}<span class="prog">${prog}</span></button>`;
+  });
+  if (PROGRAM.offDays?.length) cards.push(`<button class="dayc st-off" role="tab" type="button" id="day-off" aria-selected="${state.day === "off"}" data-d="off"><span class="d">Other days</span><span class="t">${esc([...new Set(PROGRAM.offDays.map(o => o.title))].join(", "))}</span><div class="mini" aria-hidden="true"></div><span class="prog"></span></button>`);
+  document.getElementById("weekGrid").innerHTML = cards.join("");
 }
 function renderSession() {
-  const wk = WEEKS[state.week], day = DAYS[state.day], el = document.getElementById("session");
-  if (day.rest) {
-    el.innerHTML = `<div class="rest"><span class="label">${day.d} · ${wk.name}</span><h2>${day.title}</h2><p class="week-note">${day.focus}</p><ul>${day.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  const wk = WEEKS[state.week], el = document.getElementById("session");
+  if (state.day === "off") {
+    el.innerHTML = `<div class="rest"><span class="label">${wk.name} · ${weekDates(state.week)}</span><h2>Other days</h2><p class="week-note">Days without a workout. Do the workouts above on whichever days suit you.</p>${PROGRAM.offDays.map(o => `<h3>${esc(o.title)}${o.focus ? ": " + esc(o.focus) : ""}</h3><ul>${o.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`).join("")}</div>`;
     return;
   }
+  const day = DAYS[state.day], st = statusOf(state.week, state.day);
   const im = ironMin(day, wk), em = engineMin(day, wk), t = day.warm + im + em;
   const c = cardioFor(day, wk);
   const rows = day.lifts.map((l, i) => {
     const k = key(state.week, state.day, i), entry = log[k] || {};
     const doneSets = (entry.sets || []).filter(s => s.done);
     const logged = doneSets.length ? `<b>${doneSets.length}/${setsFor(l, wk)} sets</b><br>${esc(fmtSets(doneSets))}` : (entry.kg ? esc(entry.kg) + " kg" : "–");
-    return `<tr class="${entry.done ? "is-done" : ""}">
+    const grp = groupOf(i), ss = grp.length > 1 ? (grp[0] === i ? " ss ss-first" : grp[grp.length - 1] === i ? " ss ss-last" : " ss") : "";
+    const goal = l[8].goal ? `<span class="goal-chip">Goal ${esc(goalText(l[8].goal))}</span>` : "";
+    return `<tr class="${entry.done ? "is-done" : ""}${ss}">
       <td><input type="checkbox" id="chk-${k}" data-i="${i}" ${entry.done ? "checked" : ""} aria-label="Mark ${esc(l[0])} done"></td>
-      <td class="ex"><button type="button" class="ex-open" data-open="${i}">${l[6] ? `<span class="pair">${l[6]}</span>` : ""}<b>${esc(l[0])}</b>${l[7] ? ' <span class="caution" title="Physio OK first">⚠</span>' : ""}<small>${esc(l[4])}</small><span class="ex-cta">${doneSets.length ? "Open log" : "Open & log"} →</span></button></td>
+      <td class="ex"><button type="button" class="ex-open" data-open="${i}">${l[6] ? `<span class="pair">${grp[0] === i && grp.length > 1 ? "Superset " : ""}${l[6]}</span>` : ""}<b>${esc(l[0])}</b>${l[7] ? ' <span class="caution" title="Physio OK first">⚠</span>' : ""}${goal}<small>${esc(l[4])}</small><span class="ex-cta">${doneSets.length ? "Open log" : "Open & log"} →</span></button></td>
       <td class="num">${setsFor(l, wk)} × ${l[2]}</td>
       <td class="num">${l[3]}</td>
       <td class="num">${wk.rir}</td>
@@ -112,7 +191,7 @@ function renderSession() {
   el.innerHTML = `
     <div class="s-head">
       <div class="s-title">
-        <div style="display:grid;gap:4px"><span class="label">${day.d} · ${wk.name} · ${wk.tag}</span><h2>${day.title}: ${day.focus}</h2></div>
+        <div style="display:grid;gap:4px"><span class="label">${wk.name} · ${weekDates(state.week)} · ${wk.tag}</span><h2>${esc(day.title)}${day.focus ? ": " + esc(day.focus) : ""}</h2></div>
         <span class="num" style="color:var(--muted)">${t} min total</span>
       </div>
       <div class="timeline" role="img" aria-label="Warm-up ${day.warm} minutes, weights ${im} minutes, cardio ${em} minutes">
@@ -121,6 +200,7 @@ function renderSession() {
         <span class="seg-engine" style="flex:${em}">Cardio · ${em}′</span>
       </div>
       <p class="week-note">${wk.note}</p>
+      ${skipBanner(st)}
       ${endBanner()}
       ${garminLine()}
       <p class="week-note">Tap an exercise to see how it's done and log the kg and reps for each set. Unsure of a word? See <a href="#glossary" style="color:var(--iron)">gym words</a> below.</p>
@@ -149,15 +229,34 @@ function renderSession() {
       </div>
     </div>`;
 }
-function render() { renderWeeks(); renderGrid(); renderSession(); save(); }
+function render() {
+  DAYS = workoutsOf(state.week);
+  if (state.day !== "off" && !DAYS[state.day]) state.day = 0;
+  renderWeeks(); renderGrid(); renderSession(); save();
+}
+// Skipping a workout changes the plan for this week only (e.g. a holiday).
+function skipBanner(st) {
+  if (st === "skipped") return `<div class="ended"><span><b>Skipped this week.</b> It doesn't count as missed.</span><button type="button" data-skipwo="0">Undo</button></div>`;
+  if (st === "missed") return `<p class="week-note"><b>Missed:</b> this week is over. You can still log it if you did it.</p>`;
+  if (st === "todo" && !isPast(state.week)) return `<button type="button" class="end-btn" data-skipwo="1">Skip this workout this week</button>`;
+  return "";
+}
+async function skipWorkout(skip) {
+  try {
+    const r = await api.skipWorkout(state.week, state.day, skip);
+    WEEKS[state.week].skip = r.skip; render();
+  } catch (e) { if (e.status === 401) return showAuth(); setStatus("error", e.message); }
+}
 
 document.getElementById("weekTabs").addEventListener("click", e => {
-  const b = e.target.closest("[data-w]"); if (!b) return; state.week = +b.dataset.w; render();
+  const b = e.target.closest("[data-w]"); if (!b) return;
+  state.week = +b.dataset.w; DAYS = workoutsOf(state.week); state.day = nextDue(state.week); render();
 });
 document.getElementById("weekGrid").addEventListener("click", e => {
-  const b = e.target.closest("[data-d]"); if (!b) return; state.day = +b.dataset.d; render();
+  const b = e.target.closest("[data-d]"); if (!b) return; state.day = b.dataset.d === "off" ? "off" : +b.dataset.d; render();
 });
 document.getElementById("session").addEventListener("click", e => {
+  const sk = e.target.closest("[data-skipwo]"); if (sk) return skipWorkout(sk.dataset.skipwo === "1");
   const b = e.target.closest("[data-open]"); if (b) return openSheet(+b.dataset.open);
   if (e.target.closest("[data-endopen]")) { endReturn = null; endDraft = { reason: "", note: "" }; return openSheet("end"); }
   if (e.target.closest("[data-unend]")) { delete log[endKey()]; save(); render(); }
@@ -181,11 +280,20 @@ function entryFor(i) {
   while (e.sets.length < setsFor(l, WEEKS[state.week])) e.sets.push({ kg: "", reps: "", done: false });
   return e;
 }
+// The last time this exercise was done, in any week or workout of this block
+// (latest week, then latest date within a week, since workouts can be done
+// in any order). Must match
+// lastSets() in server/src/store.ts.
 function lastTime(i) {
-  for (let w = state.week - 1; w >= 0; w--) {
-    const s = (log[key(w, state.day, i)]?.sets || []).filter(x => x.done);
-    if (s.length) return { week: WEEKS[w].name, sets: s };
+  const want = slug(DAYS[state.day].lifts[i][0]), here = key(state.week, state.day, i);
+  let found = null;
+  for (const [k, e] of Object.entries(log)) {
+    const m = k.match(/^(\d+)-(\d+)-(.+)$/);
+    if (!m || m[3] !== want || k === here || +m[1] > state.week) continue;
+    const s = (e?.sets || []).filter(x => x.done), date = String(e.date || "");
+    if (s.length && (!found || +m[1] > found.w || (+m[1] === found.w && (date > found.date || (date === found.date && +m[2] > found.d))))) found = { w: +m[1], d: +m[2], date, sets: s };
   }
+  if (found) return { week: WEEKS[found.w]?.name || "Week " + (found.w + 1), sets: found.sets };
   // Nothing yet this block: use the last non-recovery week of the previous block.
   if (PREVIOUS) {
     const want = slug(DAYS[state.day].lifts[i][0]);
@@ -199,6 +307,24 @@ function lastTime(i) {
     if (best) return { week: "Last block, " + (PREVIOUS.weeks[best.w]?.name || "Week " + (best.w + 1)), sets: best.sets };
   }
   return null;
+}
+// Goal progress: the most sets that reached it in one session, this block or last.
+function goalNote(lift, last) {
+  const g = lift.goal; if (!g) return "";
+  const want = slug(lift.name);
+  let bestSets = 0, bestReps = 0;
+  for (const entries of [log, PREVIOUS?.entries || {}]) {
+    for (const [k, e] of Object.entries(entries)) {
+      if (k.replace(/^\d+-\d+-/, "") !== want) continue;
+      const s = (e?.sets || []).filter(x => x.done);
+      bestSets = Math.max(bestSets, goalSets(g, s));
+      for (const x of s) if (g.kg === undefined || (numOf(x.kg) ?? 0) >= g.kg) bestReps = Math.max(bestReps, numOf(x.reps) ?? 0);
+    }
+  }
+  const what = `Goal: <b>${esc(goalText(g))}</b>${g.note ? " (" + esc(g.note) + ")" : ""}.`;
+  if (bestSets >= g.sets) return `<p class="goal-note done">${what} Reached ✓ Time to set a new one.</p>`;
+  const sofar = bestSets ? `${bestSets} of ${g.sets} sets there so far` : bestReps ? `best so far ${bestReps}${g.kg !== undefined ? " at " + fmtKg(g.kg) + " kg" : ""}` : last ? "not at the goal weight yet" : "";
+  return `<p class="goal-note">${what}${sofar ? " " + esc(sofar[0].toUpperCase() + sofar.slice(1)) + "." : ""}</p>`;
 }
 function openSheet(i) {
   sheetI = i; renderSheet(); sheet.hidden = false; document.body.style.overflow = "hidden";
@@ -233,11 +359,12 @@ function renderSheet() {
   const l = day.lifts[sheetI], e = entryFor(sheetI), info = INFO[l[0]];
   const p = (info && PHOTOS[info[0]]) || { img: [], muscles: [], secondary: [] };
   const last = lastTime(sheetI), repTarget = parseInt(l[2]);
+  const sug = suggestNext(l[8], LIB[l[0]]?.load, last?.sets, wk), grp = groupOf(sheetI);
   const target = setsFor(l, wk), wh = weightHint(l[0]);
   const rows = e.sets.map((s, j) => {
     const prevKg = e.sets.slice(0, j).reverse().find(x => x.kg)?.kg;
-    const phKg = prevKg ||(last?.sets[j] || last?.sets[0])?.kg || "kg";
-    const phReps = (last?.sets[j]?.reps) || repTarget;
+    const phKg = prevKg || sug.kg || "kg";
+    const phReps = sug.reps || repTarget;
     return `<div class="set ${s.done ? "is-done" : ""}">
       <span class="set-n" aria-hidden="true">${j + 1}</span>
       <input class="sin" id="s-kg-${j}" data-set="${j}" data-f="kg" inputmode="${LIB[l[0]]?.load === "band" ? "text" : "decimal"}" placeholder="${esc(phKg)}" value="${esc(s.kg)}" aria-label="Set ${j + 1} weight, ${wh[0]}">
@@ -250,10 +377,10 @@ function renderSheet() {
   sheet.innerHTML = `<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sh-title" tabindex="-1">
     <div class="sh-head">
       <div class="sh-top">
-        <div style="display:grid;gap:4px;min-width:0"><span class="label">Exercise ${sheetI + 1} of ${n} · ${day.d} ${day.title} · ${wk.name}</span><h2 id="sh-title">${esc(l[0])}</h2></div>
+        <div style="display:grid;gap:4px;min-width:0"><span class="label">Exercise ${sheetI + 1} of ${n} · ${esc(day.title)} · ${wk.name}</span><h2 id="sh-title">${esc(l[0])}</h2></div>
         <button type="button" class="x" data-close aria-label="Close">✕</button>
       </div>
-      <div class="target"><span class="chip iron">${target} × ${l[2]}</span><span class="chip warm">Rest ${l[3]}</span><span class="chip engine">RIR ${wk.rir}</span>${l[6] ? `<span class="chip iron">Superset ${l[6]}</span>` : ""}</div>
+      <div class="target"><span class="chip iron">${target} × ${l[2]}</span><span class="chip warm">Rest ${l[3]}</span><span class="chip engine">RIR ${wk.rir}</span>${l[6] ? `<span class="chip iron">Superset ${l[6]}</span>` : ""}${l[8].goal ? `<span class="chip goal">Goal ${esc(goalText(l[8].goal))}</span>` : ""}</div>
     </div>
     <div class="sh-body">
       ${p.img.length ? `<div class="shots">${p.img.map((src, k) => `<figure><img src="${src}" alt="${esc(l[0])}, ${k ? "finish" : "start"} position"><figcaption>${k ? "2 · Finish" : "1 · Start"}</figcaption></figure>`).join("")}</div>` : ""}
@@ -264,7 +391,9 @@ function renderSheet() {
         <div class="muscles">${p.muscles.map(m => `<span>${esc(m)}</span>`).join("")}${p.secondary.slice(0, 3).map(m => `<span class="sec">${esc(m)}</span>`).join("")}</div>
         <a href="${ytLink(l[0])}" target="_blank" rel="noopener">Watch video demos ↗</a>
       </div></details>` : ""}
-      <p class="last">${last ? `${last.week}: <b>${esc(fmtSets(last.sets))}</b>. Try to beat it by a rep or a little weight.` : `First time logging this. Pick a weight you could lift about ${wk.rir} more reps with.`}</p>
+      <p class="last">${last ? `${last.week}: <b>${esc(fmtSets(last.sets))}</b>.${sug.why ? ` Today: <b>${sug.kg ? esc(sug.kg) + " kg × " : ""}${esc(sug.reps)}</b> (${esc(sug.why)}).` : " Try to beat it by a rep or a little weight."}` : `First time logging this. Pick a weight you could lift about ${wk.rir} more reps with.`}</p>
+      ${goalNote(l[8], last)}
+      ${grp.length > 1 ? `<p class="wt-hint">Superset: ${grp.map(n => esc(day.lifts[n][6] + " " + day.lifts[n][0])).join(", then ")}, back to back. Ticking a set moves you to the next one; rest comes after ${esc(day.lifts[grp[grp.length - 1]][6])}.</p>` : ""}
       ${l[7] ? `<p class="warn-note" style="border-color:var(--warm);background:var(--warm-soft)">⚠ ${esc(l[7])}</p>` : ""}
       ${wh[1] ? `<p class="wt-hint">${wh[1]}</p>` : ""}
       <div class="sets"><div class="set-head" aria-hidden="true"><span>Set</span><span>${wh[0]}</span><span>Reps</span><span>Fail</span><span>Done</span></div>${rows}</div>
@@ -297,6 +426,26 @@ function startRest(secs) {
   clearInterval(restTimer); restTimer = setInterval(drawRest, 500); drawRest();
 }
 function stopRest() { restEnd = 0; clearInterval(restTimer); restTimer = null; drawRest(); }
+// After a set: rest, or in a superset go straight to the next exercise of the
+// round (A1 -> A2), resting after the last one and then back to the first.
+// Returns the exercise to show next.
+function setsLeft(i) {
+  const l = DAYS[state.day].lifts[i];
+  return setsFor(l, WEEKS[state.week]) - (log[key(state.week, state.day, i)]?.sets || []).filter(x => x.done).length;
+}
+function afterSet() {
+  const grp = groupOf(sheetI), lifts = DAYS[state.day].lifts;
+  if (grp.length < 2) {
+    if (setsLeft(sheetI) > 0) startRest(restSecs(lifts[sheetI][3])); else stopRest();
+    return sheetI;
+  }
+  const after = grp.slice(grp.indexOf(sheetI) + 1).find(n => setsLeft(n) > 0);
+  if (after !== undefined) { stopRest(); return after; }
+  const first = grp.find(n => setsLeft(n) > 0);
+  if (first === undefined) { stopRest(); return sheetI; }
+  startRest(restSecs(lifts[grp[grp.length - 1]][3]));
+  return first;
+}
 function syncDone() {
   const l = DAYS[state.day].lifts[sheetI], e = entryFor(sheetI);
   e.done = e.sets.filter(s => s.done).length >= setsFor(l, WEEKS[state.week]);
@@ -326,8 +475,9 @@ sheet.addEventListener("click", e => {
         if (!s[f] && inp && /^\d+(\.\d+)?$/.test(inp.placeholder)) s[f] = inp.placeholder;
       }
       s.done = true;
-      const more = ent.sets.some(x => !x.done);
-      if (more) startRest(restSecs(DAYS[state.day].lifts[sheetI][3])); else stopRest();
+      const to = afterSet();
+      syncDone(); save();
+      if (to !== sheetI) { sheetI = to; renderSheet(); sheet.querySelector(".sheet-panel").scrollTop = 0; document.querySelector(".set:not(.is-done) .tick")?.focus(); return; }
     } else if (!isFail) { s.done = false; s.fail = false; }
     syncDone(); save(); renderSheet();
     document.querySelector(isFail ? `[data-fail="${j}"]` : `[data-tick="${j}"]`)?.focus();
@@ -464,7 +614,7 @@ function renderCardioSheet() {
   sheet.innerHTML = `<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sh-title" tabindex="-1">
     <div class="sh-head">
       <div class="sh-top">
-        <div style="display:grid;gap:4px;min-width:0"><span class="label">Cardio · ${day.d} ${day.title} · ${wk.name}</span><h2 id="sh-title">${esc(c.kind)}</h2></div>
+        <div style="display:grid;gap:4px;min-width:0"><span class="label">Cardio · ${esc(day.title)} · ${wk.name}</span><h2 id="sh-title">${esc(c.kind)}</h2></div>
         <button type="button" class="x" data-close aria-label="Close">✕</button>
       </div>
       <div class="target"><span class="chip engine">${c.zone}</span><span class="chip engine">${c.hr}</span><span class="chip warm">${Math.round(c.phases.reduce((a, p) => a + p[1], 0) / 60)} min</span></div>
@@ -548,7 +698,7 @@ function renderEndSheet() {
   sheet.innerHTML = `<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sh-title" tabindex="-1">
     <div class="sh-head">
       <div class="sh-top">
-        <div style="display:grid;gap:4px;min-width:0"><span class="label">${day.d} ${day.title} · ${wk.name}</span><h2 id="sh-title">End session early</h2></div>
+        <div style="display:grid;gap:4px;min-width:0"><span class="label">${esc(day.title)} · ${wk.name}</span><h2 id="sh-title">End session early</h2></div>
         <button type="button" class="x" data-close aria-label="Close">✕</button>
       </div>
     </div>
@@ -590,14 +740,15 @@ function canon(v) {
   if (v && typeof v === "object") return "{" + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
   return JSON.stringify(v);
 }
-function addMeta(k, e) {
+function addMeta(k, e, isNew) {
   const m = k.match(/^(\d+)-(\d+)-(.+)$/); if (!m) return;
-  const [, w, d, item] = m, day = DAYS[+d], wk = WEEKS[+w];
-  if (!day || !wk || day.rest) return;
+  const [, w, d, item] = m, day = WEEKS[+w] && workoutsOf(+w)[+d], wk = WEEKS[+w];
+  if (!day || !wk) return;
   if (!e.week) e.week = wk.name;
-  if (!e.day) e.day = day.d + " " + day.title;
+  if (!e.workout) e.workout = day.title;
   if (!e.item) e.item = item === "end" ? "Ended session early" : item === "watch" ? "Garmin activity" : item === "cardio" ? "Cardio: " + cardioFor(day, wk).kind : day.lifts.find(l => slug(l[0]) === item)?.[0] || item;
-  if (!e.date) e.date = new Date().toISOString().slice(0, 10);
+  // Only new entries: an old entry without a date must not look like today's.
+  if (!e.date && isNew) e.date = new Date().toISOString().slice(0, 10);
 }
 function setStatus(s, msg) {
   const el = document.getElementById("syncStatus"); if (!el) return;
@@ -611,7 +762,7 @@ async function flush() {
   try {
     for (const k of Object.keys(log)) {
       if (!log[k] || typeof log[k] !== "object") continue;
-      addMeta(k, log[k]);
+      addMeta(k, log[k], !(k in synced));
       const c = canon(log[k]);
       if (c === synced[k]) continue;
       await api.putEntry(k, log[k]);
@@ -846,17 +997,18 @@ async function startApp() {
   let data;
   try { data = await api.program(); }
   catch (e) { if (e.status === 401) return showAuth(); authView.hidden = false; authView.innerHTML = `<p class="err">${esc(e.message)}</p><button type="button" class="primary-btn" data-retry>Try again</button>`; return; }
+  BLOCK = data.block; BLOCKS = data.blocks || []; PREVIOUS = data.previous; NOW = data.now || { week: 0, finished: false };
+  // Open on this calendar week; keep the workout picked last time if it's still this week.
+  state = { week: NOW.week, day: 0 };
   applyProgram(data.program, data.exercises);
-  BLOCK = data.block; BLOCKS = data.blocks || []; PREVIOUS = data.previous;
-  const today = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()];
-  state = { week: 0, day: Math.max(0, DAYS.findIndex(d => d.d === today)) };
-  try { const v = JSON.parse(localStorage.getItem(viewKey()) || "null"); if (v && WEEKS[v.week] && DAYS[v.day]) state = v; } catch (e) {}
+  let restored = false;
+  try { const v = JSON.parse(localStorage.getItem(viewKey()) || "null"); if (v && v.week === NOW.week && (v.day === "off" || DAYS[v.day])) { state = v; restored = true; } } catch (e) {}
   if (run?.running) clearInterval(cardioInt);
   run = null; loaded = false; log = {}; synced = {}; setStatus("wait");
   renderHeader();
   document.getElementById("appView").hidden = false;
   render();
-  try { await loadLog(); render(); }
+  try { await loadLog(); if (!restored) state.day = nextDue(state.week); render(); }
   catch (e) { if (e.status === 401) return showAuth(); setStatus("error", "Can't reach the server. Close and reopen the app to try again."); }
 }
 async function boot() {

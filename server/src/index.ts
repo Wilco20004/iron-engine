@@ -5,8 +5,9 @@ import './db';
 import { api } from './routes';
 import { mcp } from './mcp';
 import { watch } from './watch';
-import { listProfiles, ensureBlock, migrateLegacyLog, seedPrograms } from './store';
+import { listProfiles, ensureBlock, migrateLegacyLog, migrateToWorkouts, seedPrograms } from './store';
 
+migrateToWorkouts();
 seedPrograms();
 for (const p of listProfiles()) ensureBlock(p);
 migrateLegacyLog();

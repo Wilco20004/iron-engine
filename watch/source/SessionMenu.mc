@@ -2,41 +2,44 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Today's session: one row per exercise, then cardio, another day, and sync.
+// The workout: one row per exercise (a superset is one row), then cardio,
+// another workout, sync and finish.
 class SessionMenu extends WatchUi.Menu2 {
+    var rows;   // lift indices per row
+
     function initialize() {
         var s = getApp().session;
         Menu2.initialize({:title => s["title"]});
-        var lifts = s["lifts"];
-        for (var i = 0; i < lifts.size(); i++) {
-            addItem(new WatchUi.IconMenuItem(shortName(lifts[i]["name"]), liftSubLabel(lifts[i]), i, liftIcon(lifts[i]), null));
+        rows = liftRows(s["lifts"]);
+        for (var i = 0; i < rows.size(); i++) {
+            addItem(new WatchUi.IconMenuItem(rowLabel(rows[i]), rowSubLabel(rows[i]), i, rowIcon(rows[i]), null));
         }
         var c = s["cardio"];
         addItem(new WatchUi.IconMenuItem("Cardio", cardioSubLabel(), :cardio, new StatusIcon(c["done"] ? 1 : 0, 1), null));
-        addItem(new WatchUi.MenuItem("Other day", s["weekName"], :other, null));
+        addItem(new WatchUi.MenuItem("Other workout", s["weekName"] + (s["weekDone"] == true ? ": all done" : ""), :other, null));
         addItem(new WatchUi.MenuItem("Sync", syncSubLabel(), :sync, null));
         addItem(new WatchUi.MenuItem("Finish workout", finishSubLabel(), :finish, null));
     }
 
     function refresh() {
-        var lifts = getApp().session["lifts"];
-        for (var i = 0; i < lifts.size(); i++) {
+        for (var i = 0; i < rows.size(); i++) {
             var item = getItem(i);
             if (item != null) {
-                item.setSubLabel(liftSubLabel(lifts[i]));
-                (item as WatchUi.IconMenuItem).setIcon(liftIcon(lifts[i]));
+                item.setSubLabel(rowSubLabel(rows[i]));
+                (item as WatchUi.IconMenuItem).setIcon(rowIcon(rows[i]));
             }
         }
-        var cardio = getItem(lifts.size());
+        var n = rows.size();
+        var cardio = getItem(n);
         if (cardio != null) {
             cardio.setSubLabel(cardioSubLabel());
             (cardio as WatchUi.IconMenuItem).setIcon(new StatusIcon(getApp().session["cardio"]["done"] ? 1 : 0, 1));
         }
-        var sync = getItem(lifts.size() + 2);
+        var sync = getItem(n + 2);
         if (sync != null) {
             sync.setSubLabel(syncSubLabel());
         }
-        var finish = getItem(lifts.size() + 3);
+        var finish = getItem(n + 3);
         if (finish != null) {
             finish.setSubLabel(finishSubLabel());
         }
@@ -44,8 +47,60 @@ class SessionMenu extends WatchUi.Menu2 {
     }
 }
 
-function liftIcon(lift) {
-    return new StatusIcon(lift["logged"].size(), lift["sets"]);
+// Groups lifts into menu rows: lifts with the same superset letter share a row.
+function liftRows(lifts) {
+    var rows = [];
+    var byGroup = {};
+    for (var i = 0; i < lifts.size(); i++) {
+        var g = lifts[i]["group"];
+        if (g != null && g.length() > 0) {
+            var r = byGroup[g];
+            if (r != null) {
+                rows[r].add(i);
+                continue;
+            }
+            byGroup[g] = rows.size();
+        }
+        rows.add([i]);
+    }
+    return rows;
+}
+
+function rowLabel(row) {
+    var lifts = getApp().session["lifts"];
+    if (row.size() == 1) {
+        return shortName(lifts[row[0]]["name"]);
+    }
+    var names = "";
+    for (var i = 0; i < row.size(); i++) {
+        names += (i > 0 ? " + " : "") + shortName(lifts[row[i]]["name"]);
+    }
+    return names;
+}
+
+function rowSubLabel(row) {
+    var lifts = getApp().session["lifts"];
+    if (row.size() == 1) {
+        return liftSubLabel(lifts[row[0]]);
+    }
+    var done = 0;
+    var sets = 0;
+    for (var i = 0; i < row.size(); i++) {
+        done += lifts[row[i]]["logged"].size();
+        sets += lifts[row[i]]["sets"];
+    }
+    return "Superset " + lifts[row[0]]["group"] + "  " + (done >= sets ? "Done" : done + "/" + sets + " sets");
+}
+
+function rowIcon(row) {
+    var lifts = getApp().session["lifts"];
+    var done = 0;
+    var sets = 0;
+    for (var i = 0; i < row.size(); i++) {
+        done += lifts[row[i]]["logged"].size();
+        sets += lifts[row[i]]["sets"];
+    }
+    return new StatusIcon(done, sets);
 }
 
 // Menu row icon: empty ring (not started), partial ring (in progress), green tick (done).
@@ -132,8 +187,9 @@ class SessionMenuDelegate extends WatchUi.Menu2InputDelegate {
                 WatchUi.pushView(new FinishMenu(), new FinishDelegate(), WatchUi.SLIDE_UP);
             }
         } else {
-            app.workout.enter(id);
-            var ev = new ExerciseView(id);
+            var row = app.menu.rows[id];
+            app.workout.enter(row[0]);
+            var ev = new ExerciseView(row);
             WatchUi.pushView(ev, new ExerciseDelegate(ev), WatchUi.SLIDE_LEFT);
         }
     }
@@ -193,12 +249,12 @@ class DiscardDelegate extends WatchUi.ConfirmationDelegate {
     }
 }
 
-// Pick another session in the same week, or jump to the next unfinished one.
+// Pick another workout this week (any order), or the next one still to do.
 class OtherDayMenu extends WatchUi.Menu2 {
     function initialize() {
         var s = getApp().session;
         Menu2.initialize({:title => s["weekName"]});
-        addItem(new WatchUi.MenuItem("Next unfinished", null, :next, null));
+        addItem(new WatchUi.MenuItem("Next to do", null, :next, null));
         var days = s["week_sessions"];
         for (var i = 0; i < days.size(); i++) {
             addItem(new WatchUi.MenuItem(days[i]["title"], days[i]["done"] ? "Done" : "", days[i]["day"], null));

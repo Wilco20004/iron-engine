@@ -29,6 +29,7 @@ export const api = {
   deleteEntry: k => req("log/" + encodeURIComponent(k), send("DELETE")),
   importLog: entries => req("log/import", send("POST", { entries })),
   startBlock: programId => req("blocks", send("POST", { programId })),
+  skipWorkout: (week, workout, skip) => req("week/" + week + "/skip", send("POST", { workout, skip })),
   connector: () => req("connector"),
   watchKey: () => req("watch-key"),
   regenerateWatchKey: () => req("watch-key/regenerate", send("POST")),

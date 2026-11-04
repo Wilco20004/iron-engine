@@ -47,9 +47,8 @@
       "cardio": "deload"
     }
   ],
-  "days": [
+  "workouts": [
     {
-      "d": "Mon",
       "title": "Upper A",
       "focus": "Chest & back strength",
       "warm": 8,
@@ -202,7 +201,6 @@
       }
     },
     {
-      "d": "Tue",
       "title": "Lower A",
       "focus": "Squat focus",
       "warm": 10,
@@ -279,18 +277,6 @@
       }
     },
     {
-      "d": "Wed",
-      "rest": true,
-      "title": "Rest",
-      "focus": "Active recovery",
-      "items": [
-        "Optional 30-minute easy walk",
-        "5–10 minutes of mobility: hips, thoracic spine, shoulders",
-        "Hit your protein target even on rest days"
-      ]
-    },
-    {
-      "d": "Thu",
       "title": "Upper B",
       "focus": "Back width & upper chest",
       "warm": 8,
@@ -433,7 +419,6 @@
       }
     },
     {
-      "d": "Fri",
       "title": "Lower B",
       "focus": "Hinge focus",
       "warm": 10,
@@ -508,27 +493,34 @@
           ]
         ]
       }
+    }
+  ],
+  "offDays": [
+    {
+      "title": "Rest",
+      "focus": "Active recovery",
+      "items": [
+        "Optional 30-minute easy walk",
+        "5–10 minutes of mobility: hips, thoracic spine, shoulders",
+        "Hit your protein target even on rest days"
+      ]
     },
     {
-      "d": "Sat",
-      "rest": true,
       "title": "Optional",
       "focus": "Easy cardio or sport",
       "items": [
         "30–45 min Zone 2 (easy, conversational pace): hike, swim, cycle or a social game",
         "Skip it if you feel run down, legs are sore, or sleep was poor",
-        "Never go hard here; Monday's session matters more"
+        "Never go hard here; the next workout matters more"
       ]
     },
     {
-      "d": "Sun",
-      "rest": true,
       "title": "Rest",
       "focus": "Full rest",
       "items": [
         "No training",
         "Plan meals for the week and prep protein",
-        "Check your logged loads and set Monday's targets"
+        "Check your logged loads and set next week's targets"
       ]
     }
   ],

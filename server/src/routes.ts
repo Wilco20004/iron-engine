@@ -2,10 +2,10 @@ import crypto from 'crypto';
 import { Request, Router } from 'express';
 import { db, ProfileRow } from './db';
 import { checkPin, currentProfile, endSession, hashPin, requireProfile, startSession } from './auth';
-import { KEY_RE } from './plan';
+import { KEY_RE, workoutsFor } from './plan';
 import {
-  blockEntries, blockPlan, connectorToken, currentBlock, deleteEntry, ensureBlock, getBlock, getTemplate,
-  importEntries, library, listBlocks, listTemplates, putEntry, regenerateConnectorToken, startBlock,
+  blockEntries, blockPlan, connectorToken, currentBlock, currentWeek, deleteEntry, ensureBlock, getBlock, getTemplate,
+  importEntries, library, listBlocks, listTemplates, putEntry, regenerateConnectorToken, setBlockPlan, startBlock,
 } from './store';
 import { regenerateWatchKey, watchKey } from './watch';
 
@@ -85,7 +85,9 @@ api.get('/program', requireProfile, (_req, res) => {
     exercises: library(),
     block: blockInfo(block),
     blocks: blocks.map(blockInfo),
-    previous: prev ? { weeks: blockPlan(prev).weeks, days: blockPlan(prev).days.map(d => d.d), entries: blockEntries(p.id, prev.id) } : null,
+    previous: prev ? { weeks: blockPlan(prev).weeks, entries: blockEntries(p.id, prev.id) } : null,
+    // This calendar week of the block, so every device agrees on it.
+    now: currentWeek(block, blockPlan(block)),
   });
 });
 
@@ -153,4 +155,20 @@ api.get('/connector', requireProfile, (req, res) => {
 
 api.post('/connector/regenerate', requireProfile, (req, res) => {
   res.json({ url: connectorUrl(req, regenerateConnectorToken()) });
+});
+
+/* ---------- this week ---------- */
+
+// Skip (or un-skip) one workout in one week of the current block, e.g. for a holiday.
+api.post('/week/:week/skip', requireProfile, (req, res) => {
+  const p = me(res);
+  const b = ensureBlock(p);
+  const plan = blockPlan(b);
+  const w = +req.params.week, { workout, skip } = req.body ?? {};
+  if (!plan.weeks[w] || !Number.isInteger(workout) || !workoutsFor(plan, w)[workout]) return res.status(400).json({ error: 'No such workout' });
+  const list = new Set(plan.weeks[w].skip);
+  if (skip) list.add(workout); else list.delete(workout);
+  plan.weeks[w].skip = [...list].sort();
+  setBlockPlan(b.id, plan);
+  res.json({ week: w, skip: plan.weeks[w].skip });
 });

@@ -3,12 +3,12 @@ import { Request, Response, Router } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import { db, ProfileRow } from './db';
-import { slug } from './plan';
+import { BlockRow, db, ProfileRow } from './db';
+import { LiftSchema, Plan, WorkoutSchema, formatIssues, goalText, parseKey, setsFor, slug, startForWeek, weekStartDate, workoutsFor } from './plan';
 import {
-  blockEntries, blockPlan, connectorToken, currentBlock, ensureBlock, findProfile, getBlock, getTemplate,
+  blockEntries, blockPlan, connectorToken, currentBlock, currentWeek, ensureBlock, findProfile, getBlock, getTemplate,
   library, listBlocks, listProfiles, listTemplates, progress, readableLog, saveTemplate, setBlockPlan,
-  startBlock, upsertExercise, validatePlan,
+  startBlock, upsertExercise, validatePlan, weekStatus,
 } from './store';
 
 // A remote MCP server (streamable HTTP, stateless) so Claude can read logs and
@@ -16,23 +16,83 @@ import {
 // in the app's settings.
 
 const INSTRUCTIONS = `Iron + Engine is a household training app. Each person has a profile, a current
-training block (one run through a plan, usually 4 weeks) and a log of what they did.
+training block (a plan run over a few calendar weeks) and a log of what they did.
+
+How plans work:
+- A block runs in calendar weeks, Monday to Sunday, from the day it started. Each week sets the effort
+  (RIR = reps in reserve, sets, deload) and is a checklist of workouts done on any day, in any order.
+  Missed days don't move anything: the week just has fewer workouts done.
+- plan.workouts is the default list for every week. A week can have its own list (weeks[n].workouts)
+  or skip workouts (weeks[n].skip), without affecting other weeks.
+- Exercises can have a goal (e.g. 3 x 10 strict pull-ups) and build up by load (double progression
+  through the rep range) or by reps. The app suggests next time's weight and reps from the last log.
+- Lifts with pair "A1" and "A2" are a superset: done back to back, resting after A2.
 
 Conventions:
-- Every session is weights first, then cardio. Weeks set the effort with RIR (reps in reserve).
+- Every session is weights first, then cardio.
 - Barbell weights are logged as the TOTAL on the bar (20 kg bar included). Dumbbell weights are per dumbbell.
 - "fail: true" on a set means it was taken to failure.
 - Read a person's coaching notes (list_people) before advising them; they hold injuries and decisions.
 
-Changing plans:
-- Use get_plan, edit the JSON, then update_plan with the whole plan. Edits to the current block show
-  in the app immediately. Logged history is keyed by exercise name, so reordering is safe; renaming or
-  swapping an exercise starts a fresh history line for the new name.
-- Tell the person what you are about to change before calling update_plan or start_new_block.
+Changing plans: make the smallest change that does the job.
+- Schedule problems (a holiday, a missed day, a busy week): get_week, then skip_workout or
+  update_workout with a week. Never rebuild the whole plan for this.
+- One exercise (sets, reps, goal, how it builds up), everywhere or in one week: update_exercise.
+- One workout, everywhere or in one week: update_workout.
+- The block's weeks are off (a week lost to illness): set_current_week.
+- update_plan replaces the whole plan; use it only for a real redesign. It refuses changes that would
+  move workouts that already have logs; skip them instead.
+- Tell the person what you are about to change before changing it.
 - Record important decisions with update_person (notes), so future conversations know them.`;
 
 const text = (data: unknown) => ({ content: [{ type: 'text' as const, text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }] });
 const fail = (message: string) => ({ content: [{ type: 'text' as const, text: message }], isError: true as const });
+
+function findWorkout(plan: Plan, week: number, w: number | string): number {
+  const list = workoutsFor(plan, week);
+  const i = typeof w === 'number' ? w : list.findIndex(x => x.title.toLowerCase() === w.trim().toLowerCase());
+  if (!list[i]) throw new Error(`No workout "${w}" in week ${week + 1}. It has: ${list.map((x, n) => `${n} ${x.title}`).join(', ')}`);
+  return i;
+}
+
+// A week's own workout list, copied from the plan's the first time a single
+// week is changed.
+function weekList(plan: Plan, week: number) {
+  const wk = plan.weeks[week];
+  if (!wk) throw new Error(`The block has ${plan.weeks.length} weeks`);
+  wk.workouts ??= structuredClone(plan.workouts);
+  return wk.workouts;
+}
+
+function checked(plan: Plan): Plan {
+  const v = validatePlan(plan);
+  if (!v.ok) throw new Error(`Not saved. Fix these and try again:\n${v.error}`);
+  return v.plan;
+}
+
+// Saves a block's plan unless it would change which workout already-logged
+// sets belong to (log keys hold the workout's position in its week).
+function savePlan(p: ProfileRow, b: BlockRow, plan: Plan) {
+  const before = blockPlan(b);
+  const moved = new Set<string>();
+  for (const key of Object.keys(blockEntries(p.id, b.id))) {
+    const k = parseKey(key);
+    if (!k) continue;
+    const was = workoutsFor(before, k.week)[k.day]?.title, now = workoutsFor(plan, k.week)[k.day]?.title;
+    if (was && was !== now) moved.add(`week ${k.week + 1}: ${was} (position ${k.day}) would become ${now ?? 'nothing'}`);
+  }
+  if (moved.size) throw new Error(`Not saved: these workouts already have logs and would move:\n${[...moved].join('\n')}\n` +
+    'Keep them in place (skip them with skip_workout, or add new workouts at the end).');
+  setBlockPlan(b.id, plan);
+  const names = (pl: Plan) => new Set([pl.workouts, ...pl.weeks.map(w => w.workouts ?? [])].flat().flatMap(w => w.lifts.map(l => l.name)));
+  const was = names(before), now = names(plan);
+  const lib = library();
+  return {
+    saved: true, person: p.name, block: b.number,
+    added: [...now].filter(n => !was.has(n)), removed: [...was].filter(n => !now.has(n)),
+    notInLibrary: [...now].filter(n => !lib[n]).map(n => `${n} (no photo or how-to; add with upsert_exercise)`),
+  };
+}
 
 function person(who: string): ProfileRow {
   const p = findProfile(who);
@@ -99,20 +159,131 @@ function buildServer() {
     const v = validatePlan(plan);
     if (!v.ok) throw new Error(`The plan was not saved. Fix these and try again:\n${v.error}`);
     const b = ensureBlock(p);
-    const before = blockPlan(b);
-    setBlockPlan(b.id, v.plan);
+    const r = savePlan(p, b, v.plan);
     if (also_update_template) {
       saveTemplate(v.plan);
       db.prepare('UPDATE profiles SET program_id = ? WHERE id = ?').run(v.plan.id, p.id);
     }
-    const names = (pl: typeof before) => new Set(pl.days.flatMap(d => 'lifts' in d ? d.lifts.map(l => l.name) : []));
-    const was = names(before), now = names(v.plan);
-    const lib = library();
+    return { ...r, templateUpdated: also_update_template };
+  }));
+
+  tool('get_week', {
+    title: 'Get a week',
+    description: 'One calendar week of a person\'s current block: its dates, effort, and each workout with its status ' +
+      '(done, started, todo, skipped, missed) and exercises. Defaults to this week. Use before changing a week.',
+    inputSchema: { person: Person, week: z.number().int().min(1).optional().describe('Week number (1 = the block\'s first week); defaults to this week.') },
+    annotations: { readOnlyHint: true },
+  }, safe(({ person: who, week }: { person: string; week?: number }) => {
+    const p = person(who);
+    const b = ensureBlock(p);
+    const plan = blockPlan(b);
+    const now = currentWeek(b, plan);
+    const w = week ? week - 1 : now.week;
+    const wk = plan.weeks[w];
+    if (!wk) throw new Error(`The block has ${plan.weeks.length} weeks`);
+    const entries = blockEntries(p.id, b.id);
+    const { workouts: _, ...effort } = wk;
     return {
-      saved: true, person: p.name, block: b.number, templateUpdated: also_update_template,
-      added: [...now].filter(n => !was.has(n)), removed: [...was].filter(n => !now.has(n)),
-      notInLibrary: [...now].filter(n => !lib[n]).map(n => `${n} (no photo or how-to; add with upsert_exercise)`),
+      person: p.name, week: w + 1, of: plan.weeks.length, startsOn: weekStartDate(b.started_at, w),
+      isThisWeek: w === now.week && !now.finished, blockFinished: now.finished,
+      ownWorkoutList: !!wk.workouts, effort,
+      workouts: weekStatus(b, plan, entries, w).map(s => {
+        const wo = workoutsFor(plan, w)[s.index];
+        return { position: s.index, title: s.title, status: s.status, exercises: wo.lifts.map(l => `${l.pair ? l.pair + ' ' : ''}${l.name}: ${setsFor(l, wk)} x ${l.reps}`) };
+      }),
+      offDays: plan.offDays.map(o => o.title),
     };
+  }));
+
+  tool('skip_workout', {
+    title: 'Skip a workout this week',
+    description: 'Mark a workout as skipped (or not) in one week only, e.g. for a holiday or a lost day. Other weeks are untouched. ' +
+      'Logged sets are kept.',
+    inputSchema: {
+      person: Person,
+      workout: z.union([z.number().int().min(0), z.string()]).describe('Workout position (from get_week) or title.'),
+      week: z.number().int().min(1).optional().describe('Week number; defaults to this week.'),
+      skip: z.boolean().default(true).describe('false un-skips it.'),
+    },
+  }, safe(({ person: who, workout, week, skip }: { person: string; workout: number | string; week?: number; skip: boolean }) => {
+    const p = person(who);
+    const b = ensureBlock(p);
+    const plan = blockPlan(b);
+    const w = week ? week - 1 : currentWeek(b, plan).week;
+    if (!plan.weeks[w]) throw new Error(`The block has ${plan.weeks.length} weeks`);
+    const i = findWorkout(plan, w, workout);
+    const list = new Set(plan.weeks[w].skip);
+    if (skip) list.add(i); else list.delete(i);
+    plan.weeks[w].skip = [...list].sort();
+    setBlockPlan(b.id, checked(plan));
+    return { saved: true, week: w + 1, workout: workoutsFor(plan, w)[i].title, skipped: skip };
+  }));
+
+  tool('update_workout', {
+    title: 'Change a workout',
+    description: 'Replace one workout (title, focus, minutes, lifts, cardio) with the given JSON, in every week or in one week only. ' +
+      'With week, only that week changes (it gets its own copy of the workout list). position "new" adds a workout to that week (or to all weeks).',
+    inputSchema: {
+      person: Person,
+      position: z.union([z.number().int().min(0), z.literal('new')]).describe('Workout position (from get_week), or "new".'),
+      workout: z.object({}).passthrough().describe('The complete workout object (same shape as plan.workouts[n]).'),
+      week: z.number().int().min(1).optional().describe('Only this week. Leave out to change the plan for every week that uses the plan\'s workouts.'),
+    },
+  }, safe(({ person: who, position, workout, week }: { person: string; position: number | 'new'; workout: unknown; week?: number }) => {
+    const p = person(who);
+    const b = ensureBlock(p);
+    const plan = blockPlan(b);
+    const parsed = WorkoutSchema.safeParse(workout);
+    if (!parsed.success) throw new Error(`Not saved. Fix these and try again:\n${formatIssues(parsed.error)}`);
+    const list = week ? weekList(plan, week - 1) : plan.workouts;
+    if (position === 'new') list.push(parsed.data);
+    else if (list[position]) list[position] = parsed.data;
+    else throw new Error(`There is no workout ${position}; there are ${list.length}`);
+    return savePlan(p, b, checked(plan));
+  }));
+
+  tool('update_exercise', {
+    title: 'Change an exercise in the plan',
+    description: 'Change one exercise wherever it appears (every week, or one week only): sets, reps, rest, cue, goal, how it builds up, ' +
+      'caution, superset pair, or rename/swap it (a new name starts a new history line).',
+    inputSchema: {
+      person: Person,
+      exercise: z.string().describe('Current exercise name in the plan.'),
+      changes: LiftSchema.partial().describe('Only the fields to change. goal: null removes the goal.').passthrough(),
+      week: z.number().int().min(1).optional().describe('Only this week. Leave out for every week.'),
+    },
+  }, safe(({ person: who, exercise, changes, week }: { person: string; exercise: string; changes: Record<string, unknown>; week?: number }) => {
+    const p = person(who);
+    const b = ensureBlock(p);
+    const plan = blockPlan(b);
+    const lists = week ? [weekList(plan, week - 1)] : [plan.workouts, ...plan.weeks.filter(wk => wk.workouts).map(wk => wk.workouts!)];
+    let n = 0;
+    for (const list of lists) for (const wo of list) {
+      wo.lifts = wo.lifts.map(l => {
+        if (slug(l.name) !== slug(exercise)) return l;
+        n++;
+        const next: Record<string, unknown> = { ...l, ...changes };
+        for (const [k, val] of Object.entries(changes)) if (val === null) delete next[k];
+        return next as typeof l;
+      });
+    }
+    if (!n) throw new Error(`"${exercise}" isn't in ${week ? `week ${week}` : 'the plan'}`);
+    return { ...savePlan(p, b, checked(plan)), changedIn: n };
+  }));
+
+  tool('set_current_week', {
+    title: 'Set which week it is',
+    description: 'Move the block\'s dates so that the given week is this calendar week, e.g. after a week off sick (repeat a week) ' +
+      'or to skip ahead. Logs stay with their weeks.',
+    inputSchema: { person: Person, week: z.number().int().min(1).describe('The week number that should be this week.') },
+  }, safe(({ person: who, week }: { person: string; week: number }) => {
+    const p = person(who);
+    const b = ensureBlock(p);
+    const plan = blockPlan(b);
+    if (!plan.weeks[week - 1]) throw new Error(`The block has ${plan.weeks.length} weeks`);
+    const start = startForWeek(b.started_at, week - 1);
+    db.prepare('UPDATE blocks SET started_at = ? WHERE id = ?').run(start, b.id);
+    return { saved: true, person: p.name, thisWeek: week, blockStartedAt: start, weekStartsOn: weekStartDate(start, week - 1) };
   }));
 
   tool('get_log', {
@@ -130,12 +301,15 @@ function buildServer() {
 
   tool('get_progress', {
     title: 'Get progress',
-    description: 'Per exercise, across all blocks: the best set each week, estimated 1-rep max, volume and failure sets. Optionally one exercise.',
+    description: 'Per exercise, across all blocks: the best set each week, estimated 1-rep max, volume and failure sets, plus the goals set in the current plan. Optionally one exercise.',
     inputSchema: { person: Person, exercise: z.string().optional().describe('Exercise name to limit to, e.g. "Barbell bench press".') },
     annotations: { readOnlyHint: true },
   }, safe(({ person: who, exercise }: { person: string; exercise?: string }) => {
     const p = person(who);
-    return { person: p.name, progress: progress(p.id, exercise) };
+    const plan = blockPlan(ensureBlock(p));
+    const goals = [...new Map([plan.workouts, ...plan.weeks.map(w => w.workouts ?? [])].flat().flatMap(w => w.lifts)
+      .filter(l => l.goal && (!exercise || slug(l.name) === slug(exercise))).map(l => [l.name, { exercise: l.name, goal: goalText(l.goal!), note: l.goal!.note }])).values()];
+    return { person: p.name, goals, progress: progress(p.id, exercise) };
   }));
 
   tool('start_new_block', {

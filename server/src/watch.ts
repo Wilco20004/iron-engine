@@ -2,15 +2,15 @@ import crypto from 'crypto';
 import path from 'path';
 import { NextFunction, Request, Response, Router } from 'express';
 import { db, ProfileRow } from './db';
-import { Plan, parseKey, slug } from './plan';
-import { blockEntries, blockPlan, ensureBlock, listBlocks, library, putEntry } from './store';
+import { Plan, Workout, goalSets, goalText, groupOf, setsFor, slug, suggestNext, workoutsFor } from './plan';
+import { blockEntries, blockPlan, currentWeek, ensureBlock, lastSets, library, putEntry, weekStatus } from './store';
 
 // API for the Garmin watch app (watch/ in this repo). The watch can't sign in,
 // so each person has a watch key, sent as the X-Watch-Key header (or ?key=).
 // Responses are compact and ASCII-only because watch fonts lack many glyphs.
+// "day" in requests and responses is the workout's position in that week.
 
 type Entry = Record<string, any>;
-type TrainingDay = Extract<Plan['days'][number], { lifts: unknown }>;
 
 export function watchKey(profileId: string): string {
   const row = db.prepare('SELECT watch_key FROM profiles WHERE id = ?').get(profileId) as { watch_key: string | null };
@@ -25,45 +25,11 @@ export function regenerateWatchKey(profileId: string): string {
 
 const ascii = (s: string) => s.replace(/[–—]/g, '-').replace(/×/g, 'x').replace(/[^\x20-\x7E]/g, '').trim();
 const restSecs = (txt: string) => { const n = parseFloat(txt); return Math.round(/min/.test(txt) ? n * 60 : n) || 60; };
-const setsFor = (lift: TrainingDay['lifts'][number], wk: Plan['weeks'][number]) =>
-  Math.max(1, Math.round((lift.sets + (lift.main ? wk.extraSets : 0)) * wk.setScale));
-const isTraining = (d: Plan['days'][number]): d is TrainingDay => 'lifts' in d;
 
-function cardioFor(plan: Plan, day: TrainingDay, wk: Plan['weeks'][number]) {
+function cardioFor(plan: Plan, day: Workout, wk: Plan['weeks'][number]) {
   if (wk.cardio !== 'deload') return { kind: day.cardio.kind, phases: day.cardio.phases };
   const m = plan.deloadCardio?.minutes ?? 15;
   return { kind: 'Easy ' + day.cardio.kind.replace(/ intervals?/i, '').toLowerCase(), phases: [['Steady Zone 2', m * 60, 'steady']] };
-}
-
-function sessionDone(plan: Plan, entries: Record<string, Entry>, w: number, d: number) {
-  const day = plan.days[d];
-  if (!isTraining(day)) return true;
-  if (entries[`${w}-${d}-end`] || entries[`${w}-${d}-cardio`]?.done) return true;
-  return day.lifts.every(l => entries[`${w}-${d}-${slug(l.name)}`]?.done);
-}
-
-// Last weight used for an exercise: earlier weeks of this block, else the
-// previous block's last non-recovery week.
-function suggestKg(profileId: string, blockNumber: number, plan: Plan, entries: Record<string, Entry>, week: number, name: string): string {
-  const s = slug(name);
-  const firstKg = (e?: Entry) => (e?.sets as Entry[] | undefined)?.find(x => x.done && x.kg)?.kg as string | undefined;
-  for (let w = week - 1; w >= 0; w--) {
-    for (const [k, e] of Object.entries(entries)) {
-      const p = parseKey(k);
-      if (p && p.week === w && p.item === s && firstKg(e)) return firstKg(e)!;
-    }
-  }
-  const prev = listBlocks(profileId).find(b => b.number === blockNumber - 1);
-  if (!prev) return '';
-  const prevPlan = blockPlan(prev);
-  let best: { w: number; kg: string } | null = null;
-  for (const [k, e] of Object.entries(blockEntries(profileId, prev.id))) {
-    const p = parseKey(k);
-    if (!p || p.item !== s || prevPlan.weeks[p.week]?.cardio === 'deload') continue;
-    const kg = firstKg(e);
-    if (kg && (!best || p.week > best.w)) best = { w: p.week, kg };
-  }
-  return best?.kg ?? '';
 }
 
 function loadLabel(name: string) {
@@ -77,39 +43,46 @@ function loadLabel(name: string) {
   }
 }
 
+// This calendar week's next workout that isn't done or skipped, or a specific
+// one with week and day. weekDone: everything this week is done (or skipped).
 function session(p: ProfileRow, week?: number, day?: number) {
   const block = ensureBlock(p);
   const plan = blockPlan(block);
   const entries = blockEntries(p.id, block.id) as Record<string, Entry>;
-  let w = week, d = day, blockDone = false;
-  if (w === undefined || d === undefined || !plan.weeks[w] || !plan.days[d] || !isTraining(plan.days[d])) {
-    outer: for (let wi = 0; wi < plan.weeks.length; wi++) {
-      for (let di = 0; di < plan.days.length; di++) {
-        if (isTraining(plan.days[di]) && !sessionDone(plan, entries, wi, di)) { w = wi; d = di; break outer; }
-      }
-    }
-    if (w === undefined || d === undefined) {
-      blockDone = true;
-      w = plan.weeks.length - 1;
-      d = plan.days.map(isTraining).lastIndexOf(true);
-    }
+  const now = currentWeek(block, plan);
+  let w = now.week, d = -1, weekDone = false;
+  const status = weekStatus(block, plan, entries, w);
+  if (week !== undefined && day !== undefined && plan.weeks[week] && workoutsFor(plan, week)[day]) {
+    w = week; d = day;
+  } else {
+    d = status.find(s => s.status === 'started' || s.status === 'todo')?.index ?? -1;
+    if (d < 0) { weekDone = true; d = Math.max(0, status.findIndex(s => s.status !== 'skipped')); }
   }
-  const wk = plan.weeks[w], tday = plan.days[d] as TrainingDay;
+  const wk = plan.weeks[w], tday = workoutsFor(plan, w)[d];
+  const lib = library();
+  const shown = w === now.week ? status : weekStatus(block, plan, entries, w);
   return {
-    person: ascii(p.name), block: block.number, blockDone,
+    person: ascii(p.name), block: block.number, blockDone: now.finished, weekDone,
     week: w, day: d, weekName: ascii(wk.name), rir: wk.rir,
-    title: ascii(`${tday.d} ${tday.title}`),
+    title: ascii(tday.title),
     lifts: tday.lifts.map(l => {
       const e = entries[`${w}-${d}-${slug(l.name)}`];
-      const info = library()[l.name];
+      const info = lib[l.name];
+      const last = lastSets(p.id, block, entries, l.name, w, d);
+      const next = suggestNext(l, info?.load as string | undefined, last?.sets ?? null, wk);
       return {
         name: ascii(l.name).slice(0, 40),
         sets: setsFor(l, wk),
         reps: ascii(l.reps),
-        repT: parseInt(l.reps, 10) || 10,
+        repT: parseInt(next.reps, 10) || parseInt(l.reps, 10) || 10,
         rest: restSecs(l.rest),
         load: loadLabel(l.name),
-        kg: suggestKg(p.id, block.number, plan, entries, w!, l.name),
+        kg: next.kg,
+        tip: ascii(next.why).slice(0, 40),
+        // Supersets: lifts with the same group letter are done back to back.
+        group: groupOf(l) ?? '', pair: l.pair ?? '',
+        goal: l.goal ? ascii(goalText(l.goal)) : '',
+        goalMet: !!(l.goal && last && goalSets(l.goal, last.sets) >= l.goal.sets),
         logged: ((e?.sets as Entry[] | undefined) ?? []).filter(s => s.done).map(s => ({ kg: s.kg ?? '', reps: s.reps ?? '', fail: !!s.fail, sec: Number(s.sec) || 0, hr: Number(s.hr) || 0 })),
         // For the watch's info and photo pages; photos come from /watch/photo/<photo>-<n>.jpg.
         what: ascii(String(info?.what ?? '')).slice(0, 160),
@@ -118,16 +91,13 @@ function session(p: ProfileRow, week?: number, day?: number) {
       };
     }),
     cardio: { ...cardioFor(plan, tday, wk), done: !!entries[`${w}-${d}-cardio`]?.done },
-    // Other sessions this week, for "Other day" on the watch.
-    week_sessions: plan.days.map((dd, di) => isTraining(dd)
-      ? { day: di, title: ascii(`${dd.d} ${dd.title}`), done: sessionDone(plan, entries, w!, di) }
-      : null).filter(Boolean),
+    // This week's other workouts, for "Other workout" on the watch.
+    week_sessions: shown.filter(s => s.status !== 'skipped').map(s => ({ day: s.index, title: ascii(s.title), done: s.status === 'done' })),
   };
 }
 
 function meta(plan: Plan, w: number, d: number, item: string): Entry {
-  const day = plan.days[d] as TrainingDay;
-  return { week: plan.weeks[w].name, day: `${day.d} ${day.title}`, item, date: new Date().toISOString().slice(0, 10) };
+  return { week: plan.weeks[w].name, workout: workoutsFor(plan, w)[d].title, item, date: new Date().toISOString().slice(0, 10) };
 }
 
 function authWatch(req: Request, res: Response, next: NextFunction) {
@@ -167,8 +137,8 @@ watch.post('/set', (req, res) => {
   const { week, day, lift, set, kg, reps, fail, sec, hr } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
-  const tday = plan.days[day];
-  if (!plan.weeks[week] || !tday || !isTraining(tday) || !tday.lifts[lift] || !(Number.isInteger(set) && set >= 0 && set < 12)) {
+  const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
+  if (!tday || !tday.lifts[lift] || !(Number.isInteger(set) && set >= 0 && set < 12)) {
     return res.status(400).json({ error: 'No such exercise or set in your current plan' });
   }
   const l = tday.lifts[lift], key = `${week}-${day}-${slug(l.name)}`;
@@ -191,8 +161,8 @@ watch.post('/cardio', (req, res) => {
   const { week, day, min } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
-  const tday = plan.days[day];
-  if (!plan.weeks[week] || !tday || !isTraining(tday)) return res.status(400).json({ error: 'No such session in your current plan' });
+  const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
+  if (!tday) return res.status(400).json({ error: 'No such session in your current plan' });
   const key = `${week}-${day}-cardio`;
   const e: Entry = (blockEntries(p.id, block.id) as Record<string, Entry>)[key] ?? meta(plan, week, day, 'Cardio: ' + tday.cardio.kind);
   if (min !== undefined && min !== null && min !== '') e.min = String(min);
@@ -207,8 +177,8 @@ watch.post('/workout', (req, res) => {
   const { week, day } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
-  const tday = plan.days[day];
-  if (!plan.weeks[week] || !tday || !isTraining(tday)) return res.status(400).json({ error: 'No such session in your current plan' });
+  const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
+  if (!tday) return res.status(400).json({ error: 'No such session in your current plan' });
   const key = `${week}-${day}-watch`;
   const e: Entry = (blockEntries(p.id, block.id) as Record<string, Entry>)[key] ?? meta(plan, week, day, 'Garmin activity');
   for (const f of ['min', 'avgHr', 'maxHr', 'kcal'] as const) {

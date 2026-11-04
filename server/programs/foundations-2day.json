@@ -48,9 +48,8 @@
       "cardio": "deload"
     }
   ],
-  "days": [
+  "workouts": [
     {
-      "d": "Mon",
       "title": "Full Body A",
       "focus": "Squat, hinge & core",
       "warm": 8,
@@ -139,28 +138,6 @@
       }
     },
     {
-      "d": "Tue",
-      "rest": true,
-      "title": "Walk",
-      "focus": "Daily movement",
-      "items": [
-        "30-minute walk, with the kids or on your own",
-        "2 minutes of breathing practice: breathe in to expand your ribs, breathe out and gently draw your belly and pelvic floor in",
-        "Aim for 7,000–10,000 steps a day; this does a lot for fat loss"
-      ]
-    },
-    {
-      "d": "Wed",
-      "rest": true,
-      "title": "Rest",
-      "focus": "Recovery",
-      "items": [
-        "Easy day",
-        "Shoulder exercises from your physio, if you have them"
-      ]
-    },
-    {
-      "d": "Thu",
       "title": "Full Body B",
       "focus": "Legs, back & carries",
       "warm": 8,
@@ -314,10 +291,27 @@
           ]
         ]
       }
+    }
+  ],
+  "offDays": [
+    {
+      "title": "Walk",
+      "focus": "Daily movement",
+      "items": [
+        "30-minute walk, with the kids or on your own",
+        "2 minutes of breathing practice: breathe in to expand your ribs, breathe out and gently draw your belly and pelvic floor in",
+        "Aim for 7,000–10,000 steps a day; this does a lot for fat loss"
+      ]
     },
     {
-      "d": "Fri",
-      "rest": true,
+      "title": "Rest",
+      "focus": "Recovery",
+      "items": [
+        "Easy day",
+        "Shoulder exercises from your physio, if you have them"
+      ]
+    },
+    {
       "title": "Walk",
       "focus": "Daily movement",
       "items": [
@@ -326,8 +320,6 @@
       ]
     },
     {
-      "d": "Sat",
-      "rest": true,
       "title": "Optional",
       "focus": "Fun activity",
       "items": [
@@ -336,8 +328,6 @@
       ]
     },
     {
-      "d": "Sun",
-      "rest": true,
       "title": "Rest",
       "focus": "Full rest",
       "items": [
