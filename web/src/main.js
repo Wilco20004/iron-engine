@@ -203,7 +203,7 @@ function renderSession() {
       ${skipBanner(st)}
       ${endBanner()}
       ${garminLine()}
-      <p class="week-note">Tap an exercise to see how it's done and log the kg and reps for each set. Unsure of a word? See <a href="#glossary" style="color:var(--iron)">gym words</a> below.</p>
+      <p class="week-note">Tap an exercise to see how it's done and log the kg and reps for each set. Unsure of a word? See <a href="#glossary" data-unfold="glossary" style="color:var(--iron)">gym words</a> below.</p>
     </div>
     <div class="block">
       <div class="block-h"><h3>1 · Warm-up</h3><span class="chip warm">${day.warm} min</span></div>
@@ -256,6 +256,7 @@ document.getElementById("weekGrid").addEventListener("click", e => {
   const b = e.target.closest("[data-d]"); if (!b) return; state.day = b.dataset.d === "off" ? "off" : +b.dataset.d; render();
 });
 document.getElementById("session").addEventListener("click", e => {
+  const u = e.target.closest("[data-unfold]"); if (u) document.getElementById(u.dataset.unfold).open = true;
   const sk = e.target.closest("[data-skipwo]"); if (sk) return skipWorkout(sk.dataset.skipwo === "1");
   const b = e.target.closest("[data-open]"); if (b) return openSheet(+b.dataset.open);
   if (e.target.closest("[data-endopen]")) { endReturn = null; endDraft = { reason: "", note: "" }; return openSheet("end"); }

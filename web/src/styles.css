@@ -209,6 +209,11 @@ details.howto[open] summary { margin-bottom: 8px; }
 .muscles span.sec { border-color: var(--line); color: var(--muted); }
 .how-text a { color: var(--iron); font-weight: 600; }
 
+details.fold > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after { content: "+"; font: 700 1.6rem var(--f-display); color: var(--iron); }
+details.fold[open] > summary::after { content: "−"; }
+details.fold[open] > summary { margin-bottom: 16px; }
 .gloss { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 28px; margin: 0; }
 .gloss div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--line); }
 .gloss dt { font: 700 1.05rem var(--f-display); text-transform: uppercase; letter-spacing: .02em; }
