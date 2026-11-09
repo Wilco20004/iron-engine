@@ -45,6 +45,7 @@ class IronApp extends Application.AppBase {
         }
         var summary = workout.save();
         if (summary != null && session != null) {
+            summary["block"] = session["block"];
             summary["week"] = session["week"];
             summary["day"] = session["day"];
             enqueue("/watch/workout", summary);
@@ -94,6 +95,9 @@ class IronApp extends Application.AppBase {
         var params = {};
         if (week != null) {
             params = {"week" => week, "day" => day};
+            if (session != null && session["block"] != null) {
+                params["block"] = session["block"];
+            }
         }
         Communications.makeWebRequest(baseUrl() + "/watch/session", params, {
             :method => Communications.HTTP_REQUEST_METHOD_GET,
@@ -147,7 +151,7 @@ class IronApp extends Application.AppBase {
         lift["kg"] = kg;
         Application.Storage.setValue("session", session);
         var body = {
-            "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
+            "block" => session["block"], "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
             "set" => setIndex, "kg" => kg, "reps" => reps, "fail" => fail, "sec" => sec
         };
         if (hr > 0) {
@@ -170,7 +174,7 @@ class IronApp extends Application.AppBase {
         }
         Application.Storage.setValue("session", session);
         var body = {
-            "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
+            "block" => session["block"], "week" => session["week"], "day" => session["day"], "lift" => liftIndex,
             "set" => setIndex, "kg" => kg, "reps" => reps, "fail" => fail
         };
         if (s["sec"] != null && s["sec"] > 0) {
@@ -186,7 +190,7 @@ class IronApp extends Application.AppBase {
     function logCardio(minutes) {
         session["cardio"]["done"] = true;
         Application.Storage.setValue("session", session);
-        enqueue("/watch/cardio", {"week" => session["week"], "day" => session["day"], "min" => minutes});
+        enqueue("/watch/cardio", {"block" => session["block"], "week" => session["week"], "day" => session["day"], "min" => minutes});
         refreshMenu();
     }
 
@@ -216,7 +220,7 @@ class IronApp extends Application.AppBase {
 
     function onPosted(code as Number, data as Dictionary or String or Null) as Void {
         _busy = false;
-        // 400 means the plan changed since this set was done; drop it rather than block the queue.
+        // 400 means the plan or block changed since this was logged; drop it rather than block the queue.
         if (code == 200 || code == 400) {
             queue = queue.slice(1, null);
             Application.Storage.setValue("queue", queue);

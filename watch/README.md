@@ -81,8 +81,8 @@ own person's training.
 
 | Method | Path | Body / query |
 |---|---|---|
-| GET | `/watch/session` | optional `?week=&day=` (week and workout positions); default is this calendar week's next workout to do. Lifts carry `group`/`pair` (supersets), `kg`/`repT` (suggested from the last time), `tip` and `goal` |
-| POST | `/watch/set` | `{ week, day, lift, set, kg, reps, fail, sec, hr }` (indexes into the session; `sec` = set duration, `hr` = peak heart rate) |
+| GET | `/watch/session` | optional `?week=&day=&block=` (week and workout positions; ignored when `block` isn't the current block); default is this calendar week's next workout to do. Lifts carry `group`/`pair` (supersets), `kg`/`repT` (suggested from the last time), `tip` and `goal` |
+| POST | `/watch/set` | `{ block, week, day, lift, set, kg, reps, fail, sec, hr }` (indexes into the session; `sec` = set duration, `hr` = peak heart rate). Every upload carries `block`; one from an earlier block gets a 400 and the watch drops it |
 | POST | `/watch/cardio` | `{ week, day, min }` |
 | POST | `/watch/workout` | `{ week, day, min, avgHr, maxHr, kcal }`, stored as the session's `-watch` log entry |
 | GET | `/watch/photo/<photo>-<0\|1>.jpg` | start / finish photo of an exercise |

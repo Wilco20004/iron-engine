@@ -108,6 +108,10 @@ function authWatch(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// A watch that still shows an earlier block (saved while offline) sends that
+// block's number; its week/day positions mean nothing in the current block.
+const otherBlock = (b: unknown, current: number) => b !== undefined && b !== null && b !== '' && +(b as string) !== current;
+
 const int = (v: unknown) => (v === undefined || v === null || v === '' ? undefined : Number.isInteger(+(v as string)) ? +(v as string) : NaN);
 
 export const watch = Router();
@@ -115,8 +119,9 @@ watch.use(authWatch);
 
 // The next unfinished session, or a specific one with ?week=&day=.
 watch.get('/session', (req, res) => {
-  const w = int(req.query.week), d = int(req.query.day);
+  let w = int(req.query.week), d = int(req.query.day);
   if (Number.isNaN(w) || Number.isNaN(d)) return res.status(400).json({ error: 'week and day must be numbers' });
+  if (otherBlock(req.query.block, ensureBlock(res.locals.profile).number)) w = d = undefined;
   res.json(session(res.locals.profile, w, d));
 });
 
@@ -137,6 +142,7 @@ watch.post('/set', (req, res) => {
   const { week, day, lift, set, kg, reps, fail, sec, hr } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
+  if (otherBlock(req.body?.block, block.number)) return res.status(400).json({ error: 'That was logged in an earlier block' });
   const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
   if (!tday || !tday.lifts[lift] || !(Number.isInteger(set) && set >= 0 && set < 12)) {
     return res.status(400).json({ error: 'No such exercise or set in your current plan' });
@@ -161,6 +167,7 @@ watch.post('/cardio', (req, res) => {
   const { week, day, min } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
+  if (otherBlock(req.body?.block, block.number)) return res.status(400).json({ error: 'That was logged in an earlier block' });
   const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
   if (!tday) return res.status(400).json({ error: 'No such session in your current plan' });
   const key = `${week}-${day}-cardio`;
@@ -177,6 +184,7 @@ watch.post('/workout', (req, res) => {
   const { week, day } = req.body ?? {};
   const block = ensureBlock(p);
   const plan = blockPlan(block);
+  if (otherBlock(req.body?.block, block.number)) return res.status(400).json({ error: 'That was logged in an earlier block' });
   const tday = plan.weeks[week] ? workoutsFor(plan, week)[day] : undefined;
   if (!tday) return res.status(400).json({ error: 'No such session in your current plan' });
   const key = `${week}-${day}-watch`;

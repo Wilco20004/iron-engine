@@ -9,7 +9,8 @@ class SessionMenu extends WatchUi.Menu2 {
 
     function initialize() {
         var s = getApp().session;
-        Menu2.initialize({:title => s["title"]});
+        // Offline: this is the session saved last time, which may be out of date.
+        Menu2.initialize({:title => getApp().status.length() > 0 ? "Offline: " + s["title"] : s["title"]});
         rows = liftRows(s["lifts"]);
         for (var i = 0; i < rows.size(); i++) {
             addItem(new WatchUi.IconMenuItem(rowLabel(rows[i]), rowSubLabel(rows[i]), i, rowIcon(rows[i]), null));
